@@ -1,4 +1,4 @@
-module github.com/daniellee/grafana-webhook
+module github.com/vgrusdev/grafana-webhook
 
 go 1.21
 
