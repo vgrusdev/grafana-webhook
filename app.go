@@ -20,7 +20,7 @@ type Body struct {
 	Receiver	string			`json:"receiver,omitempty"`		// 	Name of the contact point.
 	Status		string			`json:"status,omitempty"`		// Current status of the alert, firing or resolved.
 	OrgId		int64			`json:"orgId,omitempty"`		// ID of the organization related to the payload.
-	Alerts		[]*AlertBody 	`json:"alerts>item,omitempty"`	//array of alerts	Alerts that are triggering.
+	Alerts		[]*AlertBody 	`json:"alerts,omitempty"`	//array of alerts	Alerts that are triggering.
 	Version		string			`json:"version,omitempty"`		// Version of the payload structure.
 	TruncatedAlerts	int64		`json:"truncatedAlerts,omitempty"`	//number	Number of alerts that were truncated.
 	State		string			`json:"state,omitempty"`		//State of the alert group (either alerting or ok).
@@ -28,11 +28,11 @@ type Body struct {
 
 type AlertBody struct {
 	Status	string				`	json:"status,omitempty"`		// Current status of the alert, firing or resolved.
-	Labels	map[string]interface{}	`json:"labels>item,omitempty"`	// Labels that are part of this alert, map of string keys to string values.
-	Annotations	map[string]interface{}	`json:"annotations>item,omitempty"`	// Annotations that are part of this alert, map of string keys to string values.
+	Labels	map[string]interface{}	`json:"labels,omitempty"`	// Labels that are part of this alert, map of string keys to string values.
+	Annotations	map[string]interface{}	`json:"annotations,omitempty"`	// Annotations that are part of this alert, map of string keys to string values.
 	StartsAt	string				`json:"startsAt,omitempty"`		// Start time of the alert.
 	EndsAt		string				`json:"endsAt,omitempty"`		// End time of the alert, default value when not resolved is 0001-01-01T00:00:00Z.
-	Values	map[string]interface{}	`json:"values>item,omitempty"`	// Values that triggered the current status.
+	Values	map[string]interface{}	`json:"values,omitempty"`	// Values that triggered the current status.
 	SilenceURL	string				`json:"silenceURL,omitempty"`	// URL to silence the alert rule in the Grafana UI.
 	DashboardURL	string			`json:"dashboardURL,omitempty"`	// A link to the Grafana Dashboard if the alert has a Dashboard UID annotation.
 	ImageURL	string				`json:"imageURL,omitempty"`		// URL of a screenshot of a panel assigned to the rule that created this notification.
@@ -71,7 +71,7 @@ func Alert(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("Alerts array len = %d\n", len(m.Alerts))
 	for i, alert := range m.Alerts {
-		fmt.Printf("Alers, number=%d, alert=%+v\n", i, alert)
+		fmt.Printf("Alerts, number=%d, alert=%+v\n", i, alert)
 	}
 
 	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
