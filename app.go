@@ -73,7 +73,7 @@ func Alert(w http.ResponseWriter, r *http.Request) {
 	for i, alert := range m.Alerts {
 		fmt.Printf("Alerts, number=%d, alert=%+v\n", i, alert)
 	}
-
+    fmt.Println(".")
 	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
 }
 
