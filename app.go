@@ -65,6 +65,11 @@ func Alert(w http.ResponseWriter, r *http.Request) {
 
 	slog.Info("Alert", "json", m)
 
+
+	for i, alert := range m.Alerts {
+		slog.Info("Alert", "number", i, "alert", alert)
+	}
+
 	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
 }
 
