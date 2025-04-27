@@ -65,13 +65,13 @@ func Alert(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&m)
 	fmt.Println("Alert after decode")
 
-	fmt.Println("m=", m)
+	fmt.Println("m=", string(m))
 	slog.Info("Alert", "json", m)
 
 
 	fmt.Printf("Alerts array len = %d\n", len(m.Alerts))
 	for i, alert := range m.Alerts {
-		fmt.Printf("Alers, number=%d, alert=%v\n", i, alert)
+		fmt.Printf("Alers, number=%d, alert=%v\n", i, string(alert))
 	}
 
 	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
