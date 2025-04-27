@@ -20,7 +20,7 @@ type Body struct {
 	Receiver	string			`json:"receiver,omitempty"`		// 	Name of the contact point.
 	Status		string			`json:"status,omitempty"`		// Current status of the alert, firing or resolved.
 	OrgId		int64			`json:"orgId,omitempty"`		// ID of the organization related to the payload.
-	Alerts		[]AlertBody 	`json:"alerts>item,omitempty"`	//array of alerts	Alerts that are triggering.
+	Alerts		[]*AlertBody 	`json:"alerts>item,omitempty"`	//array of alerts	Alerts that are triggering.
 	Version		string			`json:"version,omitempty"`		// Version of the payload structure.
 	TruncatedAlerts	int64		`json:"truncatedAlerts,omitempty"`	//number	Number of alerts that were truncated.
 	State		string			`json:"state,omitempty"`		//State of the alert group (either alerting or ok).
@@ -65,7 +65,7 @@ func Alert(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&m)
 	fmt.Println("Alert after decode")
 
-	fmt.Printf("m=%+v/n", m)
+	fmt.Printf("m=%+v\n", m)
 	slog.Info("Alert", "json", m)
 
 
