@@ -58,7 +58,10 @@ func (a *App) Run(addr string) {
 func Alert(w http.ResponseWriter, r *http.Request) {
 	//var m map[string]interface{}
 	var m Body
+
+	slog.Info("Alert before decode")
 	json.NewDecoder(r.Body).Decode(&m)
+	slog.Info("Alert after decode")
 
 	slog.Info("Alert", "json", m)
 
