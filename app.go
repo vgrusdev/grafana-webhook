@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"fmt"
+
 	"github.com/gorilla/mux"
 )
 
@@ -59,15 +61,17 @@ func Alert(w http.ResponseWriter, r *http.Request) {
 	//var m map[string]interface{}
 	var m Body
 
-	slog.Info("Alert before decode")
+	fmt.Println("Alert before decode")
 	json.NewDecoder(r.Body).Decode(&m)
-	slog.Info("Alert after decode")
+	fmt.Println("Alert after decode")
 
+	fmt.Println("m=", m)
 	slog.Info("Alert", "json", m)
 
 
+	fmt.Printf("Alerts array len = %d\n", len(m.Alerts))
 	for i, alert := range m.Alerts {
-		slog.Info("Alert", "number", i, "alert", alert)
+		fmt.Printf("Alers, number=%d, alert=%v\n", i, alert)
 	}
 
 	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
