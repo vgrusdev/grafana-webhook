@@ -28,7 +28,7 @@ type Body struct {
 
 type AlertBody struct {
 	Status	string				`	json:"status,omitempty"`		// Current status of the alert, firing or resolved.
-	Labels	map[string]interface{}	`json:"labels,omitempty"`	// Labels that are part of this alert, map of string keys to string values.
+	Labels	map[string]string	`json:"labels,omitempty"`	// Labels that are part of this alert, map of string keys to string values.
 	Annotations	map[string]interface{}	`json:"annotations,omitempty"`	// Annotations that are part of this alert, map of string keys to string values.
 	StartsAt	string				`json:"startsAt,omitempty"`		// Start time of the alert.
 	EndsAt		string				`json:"endsAt,omitempty"`		// End time of the alert, default value when not resolved is 0001-01-01T00:00:00Z.
