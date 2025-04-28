@@ -49,8 +49,8 @@ func (a *App) Run(addr string) {
 	srv := &http.Server{
 		Handler:      a.Router,
 		Addr:         ":" + addr,
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 8 * time.Second,
+		ReadTimeout:  8 * time.Second,
 	}
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal(err)
@@ -61,19 +61,23 @@ func Alert(w http.ResponseWriter, r *http.Request) {
 	//var m map[string]interface{}
 	var m Body
 
-	fmt.Println("Alert before decode")
-	json.NewDecoder(r.Body).Decode(&m)
-	fmt.Println("Alert after decode")
-
-	fmt.Printf("m=%+v\n", m)
-	slog.Info("Alert", "json", m)
-
-
-	fmt.Printf("Alerts array len = %d\n", len(m.Alerts))
-	for i, alert := range m.Alerts {
-		fmt.Printf("Alerts, number=%d, alert=%+v\n", i, alert)
+	err := json.NewDecoder(r.Body).Decode(&m)
+	if err != nil {
+		slog.Error("Alert", "err", err)
+		respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message":"Invalid JSON Format"})
+		return
 	}
-    fmt.Println(".")
+
+	//fmt.Printf("m=%+v\n", m)
+	slog.Info("Alert-Webhook", "Common_Labels", m)
+	slog.Info("Alert-Webhook", "Alerts_Count", len(m.Alerts))
+
+	//fmt.Printf("Alerts array len = %d\n", len(m.Alerts))
+
+	for i, alert := range m.Alerts {
+		slog.Info("Alert-Webhook", "Alert_Num", i+1, "json", *alert)
+
+	}
 	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
 }
 
