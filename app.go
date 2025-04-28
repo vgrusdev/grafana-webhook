@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	//"fmt"
+	"fmt"
 
 	"github.com/gorilla/mux"
 )
@@ -90,7 +90,7 @@ func Alert(w http.ResponseWriter, r *http.Request) {
 		}
 		ts, _ := time.Parse(time.RFC3339, alert.StartsAt)
 		msg = fmt.Sprintf("%s\n%s:%s\nStarts: %s\n", stars, status, alert.Labels["alertname"], ts.Format(tLayout))
-		te, _ = time.Parse(time.RFC3339, alert.EndsAt)
+		te, _ := time.Parse(time.RFC3339, alert.EndsAt)
 		if (te.Format(tYear) != "0001") {
 			duration := ts.Sub(te)
 			msg = fmt.Sprintf("%sEnds  : %s\nDuration: %s\n", msg, te.Format(tLayout), duration)
