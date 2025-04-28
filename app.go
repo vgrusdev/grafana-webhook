@@ -74,9 +74,38 @@ func Alert(w http.ResponseWriter, r *http.Request) {
 
 	//fmt.Printf("Alerts array len = %d\n", len(m.Alerts))
 
+	var msg string
+	const tLayout = "02.01 15:04:05"
+	const tYear   = "2006"
+    const stars = "**********************"
+
 	for i, alert := range m.Alerts {
 		slog.Info("Alert-Webhook", "Alert_Num", i+1, "json", *alert)
 
+		status := alert.Status
+		if alert.Status == "firing" {
+			status = "Firing"
+		} else if alert.Status == "resolved" {
+			status = "Resolved"
+		}
+		ts, _ := time.Parse(time.RFC3339, alert.StartsAt)
+		msg = fmt.Sprintf("%s\n%s:%s\nStarts: %s\n", stars, status, alert.Labels["alertname"], ts.Format(tLayout))
+		te, _ = time.Parse(time.RFC3339, alert.EndsAt)
+		if (te.Format(tYear) != "0001") {
+			duration := ts.Sub(te)
+			msg = fmt.Sprintf("%sEnds  : %s\nDuration: %s\n", msg, te.Format(tLayout), duration)
+		}
+		valuename, exists := alert.Labels["valuename"]
+		if !exists {
+			valuename = "A"
+		}
+		value, exists := alert.Values[valuename]
+		if exists {
+			msg = fmt.Sprintf("%sValue :%s\n", msg, value)
+		}
+		msg = fmt.Sprintf("%s%s", msg, alert.Annotations["summary"])
+
+		fmt.Println(msg)
 	}
 	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
 }
