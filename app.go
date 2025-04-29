@@ -89,10 +89,10 @@ func Alert(w http.ResponseWriter, r *http.Request) {
 			status = "Resolved"
 		}
 		ts, _ := time.Parse(time.RFC3339, alert.StartsAt)
-		msg = fmt.Sprintf("%s\n%s:%s\nStarts: %s\n", stars, status, alert.Labels["alertname"], ts.Format(tLayout))
+		msg = fmt.Sprintf("%s\n%s: %s\nStarts: %s\n", stars, status, alert.Labels["alertname"], ts.Format(tLayout))
 		te, _ := time.Parse(time.RFC3339, alert.EndsAt)
 		if (te.Format(tYear) != "0001") {
-			duration := ts.Sub(te)
+			duration := te.Sub(ts)
 			msg = fmt.Sprintf("%sEnds  : %s\nDuration: %s\n", msg, te.Format(tLayout), duration)
 		}
 		valuename, exists := alert.Labels["valuename"]
@@ -101,9 +101,9 @@ func Alert(w http.ResponseWriter, r *http.Request) {
 		}
 		value, exists := alert.Values[valuename]
 		if exists {
-			msg = fmt.Sprintf("%sValue :%s\n", msg, value)
+			msg = fmt.Sprintf("%sValue :%f\n", msg, value)
 		}
-		msg = fmt.Sprintf("%s%s", msg, alert.Annotations["summary"])
+		msg = fmt.Sprintf("%s%s\n%s", msg, stars, alert.Annotations["summary"])
 
 		fmt.Println(msg)
 	}
