@@ -23,7 +23,7 @@ import (
 type App struct {
 	router *mux.Router
 	ctx		context.Context
-	bot		bot
+	bot		*Bot
 	chatID  int64
 }
 
@@ -54,15 +54,15 @@ func (a *App) Initialize(botToken string, chatID int64 ) (context.CancelFunc, er
 	// a.router.HandleFunc("health", HealthCheck).Methods("GET")
 	a.router.HandleFunc("/alert", Alert).Methods("POST")
 
-	a.Ctx, a.Cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	a.ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 
-	a.Bot, err := bot.New(botToken)
+	a.bot, err := bot.New(botToken)
     if err != nil {
         slog.Fatal("Alert", "err", err)
-			return err
+			return nil, err
     }
 	a.ChatID = chatID
-	return nil
+	return cancel, nil
 }
 
 func (a *App) Run(addr string) {
