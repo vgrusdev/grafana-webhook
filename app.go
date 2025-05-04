@@ -55,18 +55,18 @@ func (a *App) Initialize(botToken string, chatID int64 ) (context.CancelFunc, er
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	a.ctx = ctx
 
-	a.router = mux.NewRouter()
-	// a.router.HandleFunc("health", HealthCheck).Methods("GET")
-	a.router.HandleFunc("/alert", a.Alert).Methods("POST")
-
-	//a.ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-
-	a.bot, err := bot.New(botToken)
+	bot, err := bot.New(botToken)
     if err != nil {
         slog.Error("Alert", "err", err)
 			return nil, err
     }
+	a.bot = bot
 	a.chatID = chatID
+
+	a.router = mux.NewRouter()
+	// a.router.HandleFunc("health", HealthCheck).Methods("GET")
+	a.router.HandleFunc("/alert", a.Alert).Methods("POST")
+
 	return cancel, nil
 }
 
