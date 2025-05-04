@@ -21,9 +21,9 @@ import (
 )
 
 type App struct {
-	router *mux.Router
+	router 	*mux.Router
 	ctx		context.Context
-	bot		*Bot
+	bot		*bot.Bot
 	chatID  int64
 }
 
