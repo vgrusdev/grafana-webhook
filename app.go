@@ -62,7 +62,7 @@ func (a *App) Initialize(botToken string, chatID int64 ) (context.CancelFunc, er
         slog.Error("Alert", "err", err)
 			return nil, err
     }
-	a.ChatID = chatID
+	a.chatID = chatID
 	return cancel, nil
 }
 
@@ -75,7 +75,7 @@ func (a *App) Run(addr string) {
 		ReadTimeout:  8 * time.Second,
 	}
 	if err := srv.ListenAndServe(); err != nil {
-		log.Error(err)
+		slog.Error(err)
 	}
 }
 
@@ -118,7 +118,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 			stars = stars_R
 		}
 		ts, _ := time.Parse(time.RFC3339, alert.StartsAt)
-		msg = fmt.Sprintf("%s\n%s: %s\nStarts: %s\n", stars, status, alert.Labels["alertname"], ts.Format(tLayout))
+		msg = fmt.Sprintf("%s\n%s\nStarts: %s\n", stars, alert.Labels["alertname"], ts.Format(tLayout))
 		te, _ := time.Parse(time.RFC3339, alert.EndsAt)
 		if (te.Format(tYear) != "0001") {
 			duration := te.Sub(ts)
