@@ -14,6 +14,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"strconv"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
@@ -52,13 +53,13 @@ type AlertBody struct {
 func (a *App) Initialize(botToken string, chatID int64 ) (context.CancelFunc, error) {
 	a.router = mux.NewRouter()
 	// a.router.HandleFunc("health", HealthCheck).Methods("GET")
-	a.router.HandleFunc("/alert", Alert).Methods("POST")
+	a.router.HandleFunc("/alert", a.Alert).Methods("POST")
 
 	a.ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 
 	a.bot, err := bot.New(botToken)
     if err != nil {
-        slog.Fatal("Alert", "err", err)
+        slog.Error("Alert", "err", err)
 			return nil, err
     }
 	a.ChatID = chatID
@@ -74,7 +75,7 @@ func (a *App) Run(addr string) {
 		ReadTimeout:  8 * time.Second,
 	}
 	if err := srv.ListenAndServe(); err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 }
 
@@ -108,13 +109,13 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		slog.Info("Alert-Webhook", "Alert_Num", i+1, "json", *alert)
 
 		//status := alert.Status
-		stars = starts_O
+		stars = stars_O
 		if alert.Status == "firing" {
 			//status = "Firing"
 			stars = stars_F
 		} else if alert.Status == "resolved" {
 			//status = "Resolved"
-			stars = starts_R
+			stars = stars_R
 		}
 		ts, _ := time.Parse(time.RFC3339, alert.StartsAt)
 		msg = fmt.Sprintf("%s\n%s: %s\nStarts: %s\n", stars, status, alert.Labels["alertname"], ts.Format(tLayout))
@@ -135,7 +136,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println(msg)
 
-		var chatID, chatID_t int64
+		var chatID int64
 
 		chatID = -1
 		chatID_s, exists := alert.Labels["chatID"]
