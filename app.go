@@ -2,11 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"log"
+	//"log"
 	"log/slog"
 	"net/http"
 	"time"
-	"bytes"
+	//"bytes"
 	"fmt"
 
 	"github.com/gorilla/mux"
@@ -17,7 +17,7 @@ import (
 	"strconv"
 
 	"github.com/go-telegram/bot"
-	"github.com/go-telegram/bot/models"
+	//"github.com/go-telegram/bot/models"
 
 )
 
@@ -51,11 +51,14 @@ type AlertBody struct {
 }
 
 func (a *App) Initialize(botToken string, chatID int64 ) (context.CancelFunc, error) {
+	
+	a.ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+
 	a.router = mux.NewRouter()
 	// a.router.HandleFunc("health", HealthCheck).Methods("GET")
 	a.router.HandleFunc("/alert", a.Alert).Methods("POST")
 
-	a.ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	//a.ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 
 	a.bot, err := bot.New(botToken)
     if err != nil {
