@@ -52,7 +52,8 @@ type AlertBody struct {
 
 func (a *App) Initialize(botToken string, chatID int64 ) (context.CancelFunc, error) {
 	
-	a.ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	a.ctx = ctx
 
 	a.router = mux.NewRouter()
 	// a.router.HandleFunc("health", HealthCheck).Methods("GET")
