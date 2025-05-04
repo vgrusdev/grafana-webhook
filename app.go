@@ -75,7 +75,7 @@ func (a *App) Run(addr string) {
 		ReadTimeout:  8 * time.Second,
 	}
 	if err := srv.ListenAndServe(); err != nil {
-		slog.Error(err)
+		slog.Error("Listen", "err", err)
 	}
 }
 

@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"strconv"
+	"log/slog"
 )
 func main() {
 	a := App{}
@@ -16,7 +17,7 @@ func main() {
 		return
 	}
 	chatID_s := os.Getenv("TELEGRAM_CHAT_ID")
-	if len(chatID) == 0 {
+	if len(chatID_s) == 0 {
 		slog.Warn("TELEGRAM_CHAT_ID env is not set. Use ChatID Label in Grafana Alerts.")
 		chatID = -1
 	} else {
@@ -26,7 +27,7 @@ func main() {
 			return
 		}
 	}
-	
+
 	cancel, err := a.Initialize(botToken, chatID)
 	defer cancel()
 	if err != nil {
