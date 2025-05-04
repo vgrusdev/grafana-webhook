@@ -145,7 +145,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		chatID = -1
 		chatID_s, exists := alert.Labels["chatID"]
 		if exists {
-			chatID, err := strconv.ParseInt(chatID_s, 10, 64)
+			chatID, err = strconv.ParseInt(chatID_s, 10, 64)
 			if err != nil {
 				slog.Error("Grafana ChatID Label is incorrect.", "err=", err)
 				chatID = -1
@@ -154,13 +154,14 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 			chatID = a.chatID
 		}
 		
+		fmt.Printf("ChatID=%d\n", chatID)
 
 		//b.SendMessage(ctx, &bot.SendMessageParams{
 		//	ChatID: 313404961,
 		//	Text: "Simple Text",
 		//})
 
-		fmt.Printf("ChatID=%d\n", chatID)
+		
 	}
 	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
 }

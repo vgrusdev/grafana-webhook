@@ -10,8 +10,9 @@ func main() {
 
 	var botToken string
 	var chatID   int64
+	var err		 error
 
-	botToken := os.Getenv("TELEGRAM_BOT_TOKEN")
+	botToken = os.Getenv("TELEGRAM_BOT_TOKEN")
 	if len(botToken) == 0 {
 		slog.Error("TELEGRAM_BOT_TOKEN env is not set.")
 		return
@@ -21,7 +22,7 @@ func main() {
 		slog.Warn("TELEGRAM_CHAT_ID env is not set. Use ChatID Label in Grafana Alerts.")
 		chatID = -1
 	} else {
-		chatID, err := strconv.ParseInt(chatID_s, 10, 64)
+		chatID, err = strconv.ParseInt(chatID_s, 10, 64)
 		if err != nil {
 			slog.Error("TELEGRAM_CHAT_ID env is not integer. Use -1 if you wand to use ChatID Label in Grafana Alerts.")
 			return
