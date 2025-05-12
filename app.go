@@ -55,12 +55,12 @@ func (a *App) Initialize(botToken string, chatID int64 ) (context.CancelFunc, er
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	a.ctx = ctx
 
-	bot, err := bot.New(botToken)
+	b, err := bot.New(botToken)
     if err != nil {
         slog.Error("Alert", "err", err)
 			return nil, err
     }
-	a.bot = bot
+	a.bot = b
 	a.chatID = chatID
 
 	a.router = mux.NewRouter()
@@ -102,10 +102,11 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 
 	var msg string
 	var stars string
+	
 	const tLayout  = "02.01 15:04:05"
 	const tYear    = "2006"
 	const stars_O  = "**********************"
-    const stars_F  = "****** FIRING ! ******"
+	const stars_F  = "****** FIRING ! ******"
 	const stars_R  = "****** Resolving *****"
 	const stars_M  = "****** Message *******"
 
