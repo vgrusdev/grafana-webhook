@@ -35,7 +35,7 @@ func main() {
 		slog.Info("Calling Cancel")
 		cancel()
 		slog.Info("Cancel done")
-	}
+	}()
 	if err != nil {
 		return
 	}
