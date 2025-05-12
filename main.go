@@ -8,6 +8,7 @@ import (
 func main() {
 	a := App{}
 
+	/*
 	var botToken string
 	var chatID   int64
 	var err		 error
@@ -39,6 +40,8 @@ func main() {
 	if err != nil {
 		return
 	}
+	*/
+	a.Initialize()
 
 	a.Run("4000")
 }

@@ -50,10 +50,10 @@ type AlertBody struct {
 	ImageURL	string				`json:"imageURL,omitempty"`		// URL of a screenshot of a panel assigned to the rule that created this notification.
 }
 
-func (a *App) Initialize(botToken string, chatID int64 ) (context.CancelFunc, error) {
-	
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	a.ctx = ctx
+//func (a *App) Initialize(botToken string, chatID int64 ) (context.CancelFunc, error) {
+func (a *App) Initialize() {
+	//ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	//a.ctx = ctx
 
 	/*
 	b, err := bot.New(botToken)
@@ -69,7 +69,7 @@ func (a *App) Initialize(botToken string, chatID int64 ) (context.CancelFunc, er
 	// a.router.HandleFunc("health", HealthCheck).Methods("GET")
 	a.router.HandleFunc("/alert", a.Alert).Methods("POST")
 
-	return cancel, nil
+	//return cancel, nil
 }
 
 func (a *App) Run(addr string) {
