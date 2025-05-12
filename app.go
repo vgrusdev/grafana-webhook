@@ -12,8 +12,8 @@ import (
 	"github.com/gorilla/mux"
 
 	"context"
-	"os"
-	"os/signal"
+	//"os"
+	//"os/signal"
 	//"strconv"
 
 	"github.com/go-telegram/bot"
