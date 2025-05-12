@@ -81,6 +81,7 @@ func (a *App) Run(addr string) {
 	if err := srv.ListenAndServe(); err != nil {
 		slog.Error("Listen", "err", err)
 	}
+	slog.Info("srv.ListenAndServer done")
 }
 
 func (a *App) Alert(w http.ResponseWriter, r *http.Request) {

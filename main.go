@@ -30,7 +30,12 @@ func main() {
 	}
 
 	cancel, err := a.Initialize(botToken, chatID)
-	defer cancel()
+	//defer cancel()
+	defer func() {
+		slog.Info("Calling Cancel")
+		cancel()
+		slog.Info("Cancel done")
+	}
 	if err != nil {
 		return
 	}
