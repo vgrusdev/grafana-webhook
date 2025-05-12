@@ -55,6 +55,7 @@ func (a *App) Initialize(botToken string, chatID int64 ) (context.CancelFunc, er
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	a.ctx = ctx
 
+	/*
 	b, err := bot.New(botToken)
     if err != nil {
         slog.Error("Alert", "err", err)
@@ -62,6 +63,7 @@ func (a *App) Initialize(botToken string, chatID int64 ) (context.CancelFunc, er
     }
 	a.bot = b
 	a.chatID = chatID
+	*/
 
 	a.router = mux.NewRouter()
 	// a.router.HandleFunc("health", HealthCheck).Methods("GET")
@@ -142,6 +144,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println(msg)
 
+		/*
 		var chatID int64
 
 		chatID = -1
@@ -162,7 +165,8 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 			ChatID: chatID,
 			Text:   msg,
 		})
-
+		*/
+		
 		//b.SendMessage(ctx, &bot.SendMessageParams{
 		//	ChatID: 313404961,
 		//	Text: "Simple Text",
