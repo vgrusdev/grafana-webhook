@@ -33,18 +33,25 @@ func main() {
 			return
 		}
 	}
+	whPort := os.Getenv("WEBHOOK_PORT")
+	if len(whPort) == 0 {
+		slog.Warn("WEBHOOK_PORT env is not set. Use default port 4000")
+		whPort = "4000"
+	}
 
-
+	// bot context with cancel func
 	ctxBot, cancelBot := context.WithCancel(context.Background())
     defer cancelBot()
 
-	err = a.Initialize(ctxBot, botToken, chatID, "4000")
+	err = a.Initialize(ctxBot, botToken, chatID, whPort)
 	if err != nil {
 		slog.Error("Init", "err", err)
+		cancelBot()
 		os.Exit(1)
 	}
 
 	chSrv := make(chan string)
+	// run srv.ListenAndServe()
 	go a.Run(chSrv)
 
 	c := make(chan os.Signal, 1)
@@ -53,28 +60,28 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 
 	// Block until we receive our signal.
-	select {
+	select {	// which channel will be unblocked first ?
 	case <-c:	// os.Interrupt
 
 		// Create a deadline to wait for.
 		ctxSrv, cancelSrv := context.WithTimeout(context.Background(), 8 * time.Second)
 		defer cancelSrv()
+
 		// Doesn't block if no connections, but will otherwise wait
 		// until the timeout deadline.
 		a.Shutdown(ctxSrv)
 		// Optionally, you could run srv.Shutdown in a goroutine and block on
 		// <-ctx.Done() if your application should wait for other services
 		// to finalize based on context cancellation.
+
+		// wait for srv.shutdown results
 		s, ok := <-chSrv
 		if ok == true {
 			slog.Info(s)
 		}
 
-	case s := <-chSrv:
+	case s := <-chSrv:	// srv.ListenAndServe ended itself, probably due to error.
 		slog.Error(s)
 	}
-
-	//time.Sleep(3*time.Second)
-	//os.Exit(0)
 
 }

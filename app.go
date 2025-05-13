@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	//"log"
 	"log/slog"
 	"net/http"
 	"time"
@@ -12,8 +11,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"context"
-	//"os"
-	//"os/signal"
 	"strconv"
 
 	"github.com/go-telegram/bot"
@@ -80,12 +77,10 @@ func (a *App) Run(c chan string) {
 
 	if err := a.srv.ListenAndServe(); err != nil {
 		c <- fmt.Sprintf("%s", err)
-		// slog.Info("Srv", "message", err)
 	} else {
 		c <- "OK"
 	}
 	close(c)
-	//slog.Info("srv.ListenAndServer done")
 }
 
 func (a *App) Shutdown(ctx context.Context) {
