@@ -65,7 +65,7 @@ func main() {
 		// Optionally, you could run srv.Shutdown in a goroutine and block on
 		// <-ctx.Done() if your application should wait for other services
 		// to finalize based on context cancellation.
-		s, ok : = <-chSrv
+		s, ok := <-chSrv
 		if ok == true {
 			slog.Info(s)
 		}
