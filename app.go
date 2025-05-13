@@ -14,7 +14,7 @@ import (
 	"context"
 	//"os"
 	//"os/signal"
-	//"strconv"
+	"strconv"
 
 	"github.com/go-telegram/bot"
 	//"github.com/go-telegram/bot/models"
@@ -65,7 +65,7 @@ func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, add
 	// a.router.HandleFunc("health", HealthCheck).Methods("GET")
 	a.router.HandleFunc("/alert", a.Alert).Methods("POST")
 
-	a.Srv := &http.Server{
+	a.srv := &http.Server{
 		Handler:      a.router,
 		Addr:         ":" + addr,
 		WriteTimeout: 8 * time.Second,
