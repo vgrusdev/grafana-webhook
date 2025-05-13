@@ -1,17 +1,17 @@
 package main
 
-/*
 import (
 	"os"
 	"strconv"
 	"log/slog"
+	"context"
+	"time"
 )
-*/
 
 func main() {
 	a := App{}
 
-	/*
+	
 	var botToken string
 	var chatID   int64
 	var err		 error
@@ -33,18 +33,36 @@ func main() {
 		}
 	}
 
-	cancel, err := a.Initialize(botToken, chatID)
-	//defer cancel()
-	defer func() {
-		slog.Info("Calling Cancel")
-		cancel()
-		slog.Info("Cancel done")
-	}()
-	if err != nil {
-		return
-	}
-	*/
-	a.Initialize()
 
-	a.Run("4000")
+	ctxBot, cancelBot := context.WithCancel(context.Background())
+    defer cancelBot()
+
+	err := a.Initialize(ctxBot, botToken, chatID, "4000")
+	if err != nil {
+		slog.Err("Init", "err", err)
+		os.Exit(1)
+	}
+
+	go a.Run()
+
+	c := make(chan os.Signal, 1)
+	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
+	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
+	signal.Notify(c, os.Interrupt)
+
+	// Block until we receive our signal.
+	<-c
+
+	// Create a deadline to wait for.
+	ctxSrv, cancelSrv := context.WithTimeout(context.Background(), 8 * time.Second)
+	defer cancelSrv()
+	// Doesn't block if no connections, but will otherwise wait
+	// until the timeout deadline.
+	a.Shutdown(ctxSrv)
+	// Optionally, you could run srv.Shutdown in a goroutine and block on
+	// <-ctx.Done() if your application should wait for other services
+	// to finalize based on context cancellation.
+
+	os.Exit(0)
+
 }

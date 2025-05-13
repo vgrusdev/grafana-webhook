@@ -23,6 +23,7 @@ import (
 
 type App struct {
 	router 	*mux.Router
+	srv     *http.Server
 	ctx		context.Context
 	bot		*bot.Bot
 	chatID  int64
@@ -50,40 +51,42 @@ type AlertBody struct {
 	ImageURL	string				`json:"imageURL,omitempty"`		// URL of a screenshot of a panel assigned to the rule that created this notification.
 }
 
-//func (a *App) Initialize(botToken string, chatID int64 ) (context.CancelFunc, error) {
-func (a *App) Initialize() {
-	//ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	//a.ctx = ctx
+func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, addr string ) (error) {
 
-	/*
 	b, err := bot.New(botToken)
     if err != nil {
-        slog.Error("Alert", "err", err)
-			return nil, err
+		return err
     }
 	a.bot = b
 	a.chatID = chatID
-	*/
+	a.ctx = ctx
 
 	a.router = mux.NewRouter()
 	// a.router.HandleFunc("health", HealthCheck).Methods("GET")
 	a.router.HandleFunc("/alert", a.Alert).Methods("POST")
 
-	//return cancel, nil
-}
-
-func (a *App) Run(addr string) {
-	slog.Info("Running", "port", addr)
-	srv := &http.Server{
+	a.Srv := &http.Server{
 		Handler:      a.router,
 		Addr:         ":" + addr,
 		WriteTimeout: 8 * time.Second,
 		ReadTimeout:  8 * time.Second,
 	}
-	if err := srv.ListenAndServe(); err != nil {
+
+	return nil
+}
+
+func (a *App) Run() {
+	slog.Info("Running", "port", a.srv.Addr)
+
+	if err := a.srv.ListenAndServe(); err != nil {
 		slog.Error("Listen", "err", err)
 	}
 	slog.Info("srv.ListenAndServer done")
+}
+
+func (a *App) Shutdown(ctx context.Context) {
+	slog.Info("Srv shutting down..")
+	a.srv.Shutdown(ctx)
 }
 
 func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
@@ -144,7 +147,6 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println(msg)
 
-		/*
 		var chatID int64
 
 		chatID = -1
@@ -165,7 +167,6 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 			ChatID: chatID,
 			Text:   msg,
 		})
-		*/
 
 		//b.SendMessage(ctx, &bot.SendMessageParams{
 		//	ChatID: 313404961,
