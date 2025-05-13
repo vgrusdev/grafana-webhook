@@ -84,6 +84,7 @@ func (a *App) Run(c chan string) {
 	} else {
 		c <- "OK"
 	}
+	close(c)
 	//slog.Info("srv.ListenAndServer done")
 }
 
