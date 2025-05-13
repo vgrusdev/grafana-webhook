@@ -79,7 +79,7 @@ func (a *App) Run(c chan string) {
 	slog.Info("Running", "port", a.srv.Addr)
 
 	if err := a.srv.ListenAndServe(); err != nil {
-		c <- sprintf("%s", err)
+		c <- fmt.Sprintf("%s", err)
 		// slog.Info("Srv", "message", err)
 	} else {
 		c <- "OK"
