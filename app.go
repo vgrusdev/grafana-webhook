@@ -79,9 +79,9 @@ func (a *App) Run() {
 	slog.Info("Running", "port", a.srv.Addr)
 
 	if err := a.srv.ListenAndServe(); err != nil {
-		slog.Error("Listen", "err", err)
+		slog.Info("Srv", "message", err)
 	}
-	slog.Info("srv.ListenAndServer done")
+	//slog.Info("srv.ListenAndServer done")
 }
 
 func (a *App) Shutdown(ctx context.Context) {
