@@ -64,6 +64,7 @@ func main() {
 	// <-ctx.Done() if your application should wait for other services
 	// to finalize based on context cancellation.
 
+	time.Sleep(3*time.Seconds)
 	os.Exit(0)
 
 }
