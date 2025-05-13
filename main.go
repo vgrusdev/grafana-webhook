@@ -44,7 +44,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	go a.Run()
+	chSrv := make(chan string)
+	go a.Run(chSrv)
 
 	c := make(chan os.Signal, 1)
 	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
@@ -52,18 +53,23 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 
 	// Block until we receive our signal.
-	<-c
+	select {
+	case <-c:	// os.Interrupt
 
-	// Create a deadline to wait for.
-	ctxSrv, cancelSrv := context.WithTimeout(context.Background(), 8 * time.Second)
-	defer cancelSrv()
-	// Doesn't block if no connections, but will otherwise wait
-	// until the timeout deadline.
-	a.Shutdown(ctxSrv)
-	// Optionally, you could run srv.Shutdown in a goroutine and block on
-	// <-ctx.Done() if your application should wait for other services
-	// to finalize based on context cancellation.
+		// Create a deadline to wait for.
+		ctxSrv, cancelSrv := context.WithTimeout(context.Background(), 8 * time.Second)
+		defer cancelSrv()
+		// Doesn't block if no connections, but will otherwise wait
+		// until the timeout deadline.
+		a.Shutdown(ctxSrv)
+		// Optionally, you could run srv.Shutdown in a goroutine and block on
+		// <-ctx.Done() if your application should wait for other services
+		// to finalize based on context cancellation.
 
+	case s := <-chSrv:
+		slog.Error(s)
+	}
+	
 	//time.Sleep(3*time.Second)
 	//os.Exit(0)
 

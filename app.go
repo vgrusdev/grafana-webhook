@@ -75,11 +75,14 @@ func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, add
 	return nil
 }
 
-func (a *App) Run() {
+func (a *App) Run(c chan string) {
 	slog.Info("Running", "port", a.srv.Addr)
 
 	if err := a.srv.ListenAndServe(); err != nil {
-		slog.Info("Srv", "message", err)
+		c <- sprintf("%s", err)
+		// slog.Info("Srv", "message", err)
+	} else {
+		c <- "OK"
 	}
 	//slog.Info("srv.ListenAndServer done")
 }
