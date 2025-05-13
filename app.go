@@ -65,7 +65,7 @@ func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, add
 	// a.router.HandleFunc("health", HealthCheck).Methods("GET")
 	a.router.HandleFunc("/alert", a.Alert).Methods("POST")
 
-	a.srv := &http.Server{
+	a.srv = &http.Server{
 		Handler:      a.router,
 		Addr:         ":" + addr,
 		WriteTimeout: 8 * time.Second,
