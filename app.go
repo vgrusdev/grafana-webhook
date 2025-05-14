@@ -29,7 +29,7 @@ type App struct {
 	mClient	*minio.Client
 }
 
-type myMinio struct {
+type myMinio_t struct {
 	host string
 	key string
 	secret string
@@ -57,7 +57,7 @@ type AlertBody struct {
 	ImageURL	string				`json:"imageURL,omitempty"`		// URL of a screenshot of a panel assigned to the rule that created this notification.
 }
 
-func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, addr string, myMinio *myMinio ) (error) {
+func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, addr string, myMinio *myMinio_t ) (error) {
 
 	b, err := bot.New(botToken)
     if err != nil {
@@ -80,13 +80,15 @@ func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, add
 
 	if myMinio != nil {
 		// Initialize minio client object.
-    	a.mClient, err := minio.New(myMinio.host, &minio.Options{
+    	mClient, err := minio.New(myMinio.host, &minio.Options{
 			Creds:  credentials.NewStaticV4(myMinio.key, myMinio.secret, ""),
 			Secure: false,
 		})
 		if err != nil {
 			slog.Error("Minio client create error. Will not send images.", "err", err)
 			a.mClient = nil
+		} else {
+			a.mClient = mClient
 		}
 	} else {
 		a.mClient = nil

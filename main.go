@@ -39,17 +39,17 @@ func main() {
 		whPort = "4000"
 	}
 
-	var myMinio myMinio
+	var myMinio *myMinio_t
 
 	minioHost := os.Getenv("MINIO_HOST")
 	if len(minioHost) == 0 {
 		slog.Warn("MINIO_HOST env is not set. Pictures will not be sent")
 	    myMinio = nil
 		} else {
-			myMinio = myMinio {
+			myMinio = &myMinio_t {
 				host:	minioHost,
 				key:	os.Getenv("MINIO_KEY"),
-				secret:	os.GetEnv("MINIO_SECRET"),
+				secret:	os.Getenv("MINIO_SECRET"),
 			}
 	}
 
@@ -57,7 +57,7 @@ func main() {
 	ctxBot, cancelBot := context.WithCancel(context.Background())
     defer cancelBot()
 
-	err = a.Initialize(ctxBot, botToken, chatID, whPort, &myMinio)
+	err = a.Initialize(ctxBot, botToken, chatID, whPort, myMinio)
 	if err != nil {
 		slog.Error("Init", "err", err)
 		cancelBot()
