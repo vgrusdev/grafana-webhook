@@ -16,6 +16,8 @@ import (
 	"github.com/go-telegram/bot"
 	//"github.com/go-telegram/bot/models"
 
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
 type App struct {
@@ -24,6 +26,13 @@ type App struct {
 	ctx		context.Context
 	bot		*bot.Bot
 	chatID  int64
+	mClient	*minio.Client
+}
+
+type myMinio struct {
+	host string
+	key string
+	secret string
 }
 
 type Body struct {
@@ -48,7 +57,7 @@ type AlertBody struct {
 	ImageURL	string				`json:"imageURL,omitempty"`		// URL of a screenshot of a panel assigned to the rule that created this notification.
 }
 
-func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, addr string ) (error) {
+func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, addr string, myMinio *myMinio ) (error) {
 
 	b, err := bot.New(botToken)
     if err != nil {
@@ -67,6 +76,20 @@ func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, add
 		Addr:         ":" + addr,
 		WriteTimeout: 8 * time.Second,
 		ReadTimeout:  8 * time.Second,
+	}
+
+	if myMinio != nil {
+		// Initialize minio client object.
+    	a.mClient, err := minio.New(myMinio.host, &minio.Options{
+			Creds:  credentials.NewStaticV4(myMinio.key, myMinio.secret, ""),
+			Secure: false,
+		})
+		if err != nil {
+			slog.Error("Minio client create error. Will not send images.", "err", err)
+			a.mClient = nil
+		}
+	} else {
+		a.mClient = nil
 	}
 
 	return nil
