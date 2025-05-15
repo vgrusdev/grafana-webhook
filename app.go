@@ -8,13 +8,15 @@ import (
 	"time"
 	//"bytes"
 	"fmt"
+	"os"
 
 	"github.com/gorilla/mux"
 
 	"context"
 	"strconv"
 	"strings"
-	"errors"
+	//"errors"
+	"bytes"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
@@ -190,7 +192,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		//	Text: "Simple Text",
 		//})
 
-		err = sendImage(a.ctx, alert )
+		err = a.sendImage(alert)
 		if err != nil {
 			slog.Error("Send Image", "err", err)
 		} 
@@ -208,7 +210,7 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
-func (a *App) sendImage(ctx context.Context, alert *AlertBody) (error) {
+func (a *App) sendImage(alert *AlertBody) (error) {
 
 	imageURL := alert.ImageURL
 	if len(imageURL) == 0 {
@@ -251,7 +253,7 @@ func (a *App) sendImage(ctx context.Context, alert *AlertBody) (error) {
 	filePath := "/tmp/" + ss[len(ss)-1]
 
 	// Picture download from Minio
-	err = mClient.FGetObject(ctx, bucket, object, filePath, minio.GetObjectOptions{})
+	err = mClient.FGetObject(a.ctx, bucket, object, filePath, minio.GetObjectOptions{})
     if err != nil {
 		return err
     }
@@ -267,7 +269,7 @@ func (a *App) sendImage(ctx context.Context, alert *AlertBody) (error) {
 		Caption: "Grafana image",
 	}
 
-	a.bot.SendPhoto(ctx, params)
+	a.bot.SendPhoto(a.ctx, params)
 
 	return nil
 
