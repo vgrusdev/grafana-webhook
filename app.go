@@ -241,7 +241,7 @@ func (a *App) SendImage(ctx context.Context, alert *AlertBody) (error) {
 	}
 
 	path := strings.TrimPrefix(u.Path, "/")
-	bucket, object, found := strings.Cut(path "/")
+	bucket, object, found := strings.Cut(path, "/")
 	if found == false {
 		slog.Info("no filename", "Path", path)
 		return nil
