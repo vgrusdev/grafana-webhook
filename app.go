@@ -192,9 +192,13 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		//	Text: "Simple Text",
 		//})
 
-		err = a.sendImage(alert)
+		err = a.sendImage(alert, msg)
 		if err != nil {
 			slog.Error("Send Image", "err", err)
+			a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
+				ChatID: chatID,
+				Text:   msg,
+			})
 		} 
 
 		
@@ -210,7 +214,7 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
-func (a *App) sendImage(alert *AlertBody) (error) {
+func (a *App) sendImage(alert *AlertBody, msg string) (error) {
 
 	imageURL := alert.ImageURL
 	if len(imageURL) == 0 {
