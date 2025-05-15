@@ -182,14 +182,9 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		
 		fmt.Printf("ChatID=%d\n", chatID)
 
-		a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
-			ChatID: chatID,
-			Text:   msg,
-		})
-
-		//b.SendMessage(ctx, &bot.SendMessageParams{
-		//	ChatID: 313404961,
-		//	Text: "Simple Text",
+		//a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
+		//	ChatID: chatID,
+		//	Text:   msg,
 		//})
 
 		err = a.sendImage(alert, msg)
