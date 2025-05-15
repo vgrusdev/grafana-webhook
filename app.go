@@ -265,7 +265,7 @@ func (a *App) sendImage(alert *AlertBody, msg string) (error) {
 	params := &bot.SendPhotoParams{
 		ChatID:  a.chatID,
 		Photo:   &models.InputFileUpload{Filename: filePath, Data: bytes.NewReader(fileData)},
-		Caption: "Grafana image",
+		Caption: msg,
 	}
 
 	a.bot.SendPhoto(a.ctx, params)
