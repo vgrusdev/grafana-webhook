@@ -267,7 +267,7 @@ func (a *App) sendImage(ctx context.Context, alert *AlertBody) (error) {
 		Caption: "Grafana image",
 	}
 
-	b.SendPhoto(ctx, params)
+	a.bot.SendPhoto(ctx, params)
 
 	return nil
 
