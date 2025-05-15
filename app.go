@@ -17,8 +17,8 @@ import (
 	"errors"
 
 	"github.com/go-telegram/bot"
-	//"github.com/go-telegram/bot/models"
-
+	"github.com/go-telegram/bot/models"
+	
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
@@ -208,14 +208,15 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
-func (a *App) SendImage(ctx context.Context, alert *AlertBody) (error) {
+func (a *App) sendImage(ctx context.Context, alert *AlertBody) (error) {
 
 	imageURL := alert.ImageURL
 	if len(imageURL) == 0 {
 		slog.Info("no Image")
 		return nil
 	}
-	if u, err := url.Parse(imageURL); err != nil {
+	u, err := url.Parse(imageURL)
+	if err != nil {
 		return err
 	}
 	host := u.Hostname()
@@ -246,7 +247,7 @@ func (a *App) SendImage(ctx context.Context, alert *AlertBody) (error) {
 		slog.Info("no filename", "Path", path)
 		return nil
 	}
-	ss := strings.Split(object)
+	ss := strings.Split(object, "/")
 	filePath := "/tmp/" + ss[len(ss)-1]
 
 	// Picture download from Minio
