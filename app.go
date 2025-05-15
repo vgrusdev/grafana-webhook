@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"time"
 	//"bytes"
 	"fmt"
@@ -12,6 +13,8 @@ import (
 
 	"context"
 	"strconv"
+	"strings"
+	"errors"
 
 	"github.com/go-telegram/bot"
 	//"github.com/go-telegram/bot/models"
@@ -26,35 +29,36 @@ type App struct {
 	ctx		context.Context
 	bot		*bot.Bot
 	chatID  int64
-	mClient	*minio.Client
+	myMinio *myMinio_t
 }
 
 type myMinio_t struct {
-	host string
-	key string
-	secret string
+	host	string
+	port	string
+	key		string
+	secret	string
 }
 
 type Body struct {
-	Receiver	string			`json:"receiver,omitempty"`		// 	Name of the contact point.
-	Status		string			`json:"status,omitempty"`		// Current status of the alert, firing or resolved.
-	OrgId		int64			`json:"orgId,omitempty"`		// ID of the organization related to the payload.
-	Alerts		[]*AlertBody 	`json:"alerts,omitempty"`	//array of alerts	Alerts that are triggering.
-	Version		string			`json:"version,omitempty"`		// Version of the payload structure.
-	TruncatedAlerts	int64		`json:"truncatedAlerts,omitempty"`	//number	Number of alerts that were truncated.
-	State		string			`json:"state,omitempty"`		//State of the alert group (either alerting or ok).
+	Receiver	string					`json:"receiver,omitempty"`			// 	Name of the contact point.
+	Status		string					`json:"status,omitempty"`			// Current status of the alert, firing or resolved.
+	OrgId		int64					`json:"orgId,omitempty"`			// ID of the organization related to the payload.
+	Alerts		[]*AlertBody 			`json:"alerts,omitempty"`			//array of alerts	Alerts that are triggering.
+	Version		string					`json:"version,omitempty"`			// Version of the payload structure.
+	TruncatedAlerts	int64				`json:"truncatedAlerts,omitempty"`	//number	Number of alerts that were truncated.
+	State		string					`json:"state,omitempty"`			//State of the alert group (either alerting or ok).
 }
 
 type AlertBody struct {
-	Status	string				`	json:"status,omitempty"`		// Current status of the alert, firing or resolved.
-	Labels	map[string]string	`json:"labels,omitempty"`	// Labels that are part of this alert, map of string keys to string values.
-	Annotations	map[string]interface{}	`json:"annotations,omitempty"`	// Annotations that are part of this alert, map of string keys to string values.
-	StartsAt	string				`json:"startsAt,omitempty"`		// Start time of the alert.
-	EndsAt		string				`json:"endsAt,omitempty"`		// End time of the alert, default value when not resolved is 0001-01-01T00:00:00Z.
-	Values	map[string]interface{}	`json:"values,omitempty"`	// Values that triggered the current status.
-	SilenceURL	string				`json:"silenceURL,omitempty"`	// URL to silence the alert rule in the Grafana UI.
-	DashboardURL	string			`json:"dashboardURL,omitempty"`	// A link to the Grafana Dashboard if the alert has a Dashboard UID annotation.
-	ImageURL	string				`json:"imageURL,omitempty"`		// URL of a screenshot of a panel assigned to the rule that created this notification.
+	Status		string					`json:"status,omitempty"`			// Current status of the alert, firing or resolved.
+	Labels		map[string]string		`json:"labels,omitempty"`			// Labels that are part of this alert, map of string keys to string values.
+	Annotations	map[string]interface{}	`json:"annotations,omitempty"`		// Annotations that are part of this alert, map of string keys to string values.
+	StartsAt	string					`json:"startsAt,omitempty"`			// Start time of the alert.
+	EndsAt		string					`json:"endsAt,omitempty"`			// End time of the alert, default value when not resolved is 0001-01-01T00:00:00Z.
+	Values		map[string]interface{}	`json:"values,omitempty"`			// Values that triggered the current status.
+	SilenceURL	string					`json:"silenceURL,omitempty"`		// URL to silence the alert rule in the Grafana UI.
+	DashboardURL string					`json:"dashboardURL,omitempty"`		// A link to the Grafana Dashboard if the alert has a Dashboard UID annotation.
+	ImageURL	string					`json:"imageURL,omitempty"`			// URL of a screenshot of a panel assigned to the rule that created this notification.
 }
 
 func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, addr string, myMinio *myMinio_t ) (error) {
@@ -78,21 +82,7 @@ func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, add
 		ReadTimeout:  8 * time.Second,
 	}
 
-	if myMinio != nil {
-		// Initialize minio client object.
-    	mClient, err := minio.New(myMinio.host, &minio.Options{
-			Creds:  credentials.NewStaticV4(myMinio.key, myMinio.secret, ""),
-			Secure: false,
-		})
-		if err != nil {
-			slog.Error("Minio client create error. Will not send images.", "err", err)
-			a.mClient = nil
-		} else {
-			a.mClient = mClient
-		}
-	} else {
-		a.mClient = nil
-	}
+	a.myMinio = myMinio
 
 	return nil
 }
@@ -115,17 +105,20 @@ func (a *App) Shutdown(ctx context.Context) {
 
 func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 	//var m map[string]interface{}
-	var m Body
+	//var m Body
+	m := &Body{}
 
-	err := json.NewDecoder(r.Body).Decode(&m)
+	//err := json.NewDecoder(r.Body).Decode(&m)
+	err := json.NewDecoder(r.Body).Decode(m)
 	if err != nil {
 		slog.Error("Alert", "err", err)
 		respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message":"Invalid JSON Format"})
 		return
 	}
 
-	//fmt.Printf("m=%+v\n", m)
-	slog.Info("Alert-Webhook", "Common_Labels", m)
+	fmt.Printf("m=%+v\n", *m)
+
+	slog.Info("Alert-Webhook", "Common_Labels", *m)
 	slog.Info("Alert-Webhook", "Alerts_Count", len(m.Alerts))
 
 	//fmt.Printf("Alerts array len = %d\n", len(m.Alerts))
@@ -197,6 +190,11 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		//	Text: "Simple Text",
 		//})
 
+		err = sendImage(a.ctx, alert )
+		if err != nil {
+			slog.Error("Send Image", "err", err)
+		} 
+
 		
 	}
 	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
@@ -208,6 +206,71 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(response)
+}
+
+func (a *App) SendImage(ctx context.Context, alert *AlertBody) (error) {
+
+	imageURL := alert.ImageURL
+	if len(imageURL) == 0 {
+		slog.Info("no Image")
+		return nil
+	}
+	if u, err := url.Parse(imageURL); err != nil {
+		return err
+	}
+	host := u.Hostname()
+	if len(a.myMinio.host) > 0 {
+		host = a.myMinio.host
+	}
+	port := u.Port()
+	if len(a.myMinio.port) > 0 {
+		port = a.myMinio.port
+	}
+	if len(port) > 0 {
+		host = host + ":" + port
+	}
+
+	// Minio client
+	mClient, err := minio.New(host, &minio.Options{
+		Creds:  credentials.NewStaticV4(a.myMinio.key, a.myMinio.secret, ""),
+		Secure: false,
+	})
+	if err != nil {
+		slog.Error("Minio client create error. Will not send images.", "err", err)
+		return err
+	}
+
+	path := strings.TrimPrefix(u.Path, "/")
+	bucket, object, found := strings.Cut(path "/")
+	if found == false {
+		slog.Info("no filename", "Path", path)
+		return nil
+	}
+	ss := strings.Split(object)
+	filePath := "/tmp/" + ss[len(ss)-1]
+
+	// Picture download from Minio
+	err = mClient.FGetObject(ctx, bucket, object, filePath, minio.GetObjectOptions{})
+    if err != nil {
+		return err
+    }
+
+	fileData, errReadFile := os.ReadFile(filePath)
+	if errReadFile != nil {
+		return errReadFile
+	}
+
+	params := &bot.SendPhotoParams{
+		ChatID:  a.chatID,
+		Photo:   &models.InputFileUpload{Filename: filePath, Data: bytes.NewReader(fileData)},
+		Caption: "Grafana image",
+	}
+
+	b.SendPhoto(ctx, params)
+
+	return nil
+
+
 }
 /*
 json="	map[

@@ -41,16 +41,11 @@ func main() {
 
 	var myMinio *myMinio_t
 
-	minioHost := os.Getenv("MINIO_HOST")
-	if len(minioHost) == 0 {
-		slog.Warn("MINIO_HOST env is not set. Pictures will not be sent")
-	    myMinio = nil
-		} else {
-			myMinio = &myMinio_t {
-				host:	minioHost,
-				key:	os.Getenv("MINIO_KEY"),
-				secret:	os.Getenv("MINIO_SECRET"),
-			}
+	myMinio = &myMinio_t {
+		host:	os.Getenv("MINIO_HOST"),
+		port:	os.Getenv("MINIO_PORT"),
+		key:	os.Getenv("MINIO_KEY"),
+		secret:	os.Getenv("MINIO_SECRET"),
 	}
 
 	// bot context with cancel func
