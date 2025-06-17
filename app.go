@@ -160,7 +160,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		}
 		value, exists := alert.Values[valuename]
 		if exists {
-			msg = fmt.Sprintf("%sValue : %10.2f\n", msg, value)
+			msg = fmt.Sprintf("%sValue : %8.2f\n", msg, value)
 		}
 		msg = fmt.Sprintf("%s%s\n%s", msg, stars_M, alert.Annotations["summary"])
 
