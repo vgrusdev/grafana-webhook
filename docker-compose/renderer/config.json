@@ -1,0 +1,56 @@
+{
+  "service": {
+    "host": "0.0.0.0",
+    "port": 8081,
+    "protocol": "http",
+    "certFile": "",
+    "certKey": "",
+
+    "metrics": {
+      "enabled": false,
+      "collectDefaultMetrics": true,
+      "requestDurationBuckets": [1, 5, 7, 9, 11, 13, 15, 20, 30]
+    },
+
+    "logging": {
+      "level": "info",
+      "console": {
+        "json": true,
+        "colorize": false
+      }
+    },
+
+    "security": {
+      "authToken": "MyToken"
+    }
+  },
+  "rendering": {
+    "chromeBin": null,
+    "args": ["--no-sandbox", "--disable-gpu", "--use-gl=swiftshader"],
+    "ignoresHttpsErrors": true,
+
+    "timezone": "Europe/Moscow",
+    "acceptLanguage": "en;q=0.8, *;q=0.5",
+    "width": 1000,
+    "height": 500,
+    "deviceScaleFactor": 1,
+    "maxWidth": 3080,
+    "maxHeight": 3000,
+    "maxDeviceScaleFactor": 4,
+    "pageZoomLevel": 1,
+    "headed": false,
+
+    "mode": "default",
+    "emulateNetworkConditions": false,
+    "clustering": {
+      "monitor": false,
+      "mode": "browser",
+      "maxConcurrency": 5,
+      "timeout": 30
+    },
+
+    "verboseLogging": false,
+    "dumpio": false,
+    "timingMetrics": false
+  }
+}

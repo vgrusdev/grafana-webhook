@@ -1,0 +1,91 @@
+---
+services:
+  grafana:
+    image: grafana/grafana:10.4.18
+    #
+    hostname: grafana
+    env_file: ./grafana/grafana.env
+    environment:
+      - TZ=Europe/Moscow
+    ports:
+      - "3000:3000"
+    volumes:
+      #- ./grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/lib:/var/lib/grafana
+      - ./grafana/etc:/etc/grafana
+
+  renderer:
+    image: grafana/grafana-image-renderer:latest
+    ports:
+      - 8081
+    volumes:
+      - ./renderer/config.json:/usr/src/app/config.json
+
+  minio:
+    image: minio/minio
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /data/mybacket && \
+        minio server /data --console-address ":9001"
+
+    # mc mb local/mybacket
+    # mc ilm rule rm --all --force local/mybacket
+    # mc ilm rule add --expire-days 14 --noncurrent-expire-days 7 local/mybacket
+
+    environment:
+      - MINIO_ROOT_USER=Screen
+      - MINIO_ROOT_PASSWORD=SuperSecret
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+      - MINIO_UPDATE=off
+      - MC_CONFIG_DIR=/root/.mc
+    ports:
+      - 9000
+      - 9001:9001
+    volumes:
+      - ./minio/data:/data
+      - ./minio/conf/.mc:/root/.mc
+
+  #webdav:
+  #  image: bytemark/webdav:latest
+  #  restart: always
+  #  ports:
+  #    - 80
+  #  environment:
+  #    AUTH_TYPE: Basic
+  #    USERNAME: screen
+  #    PASSWORD: Screen_SuperSecret
+  #  volumes:
+  #    - ./dav:/var/lib/dav
+
+  prometheus:
+    image: ubuntu/prometheus
+    command: ["--config.file=/etc/prometheus/prometheus.yml",
+              "--web.config.file=/etc/prometheus/web.yml",
+              "--storage.tsdb.path=/prometheus",
+              "--web.console.libraries=/usr/share/prometheus/console_libraries",
+              "--web.console.templates=/usr/share/prometheus/consoles"]
+    restart: unless-stopped
+    hostname: prometheus
+    # environment:
+    ports:
+      - 9090
+    volumes:
+      - ./prom:/prometheus
+      - ./prom/conf/cert:/etc/prometheus/cert:ro
+      - ./prom/conf/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      #- ${BASE_DIR:?Missing BASE_DIR env}/conf/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prom/conf/web.yml:/etc/prometheus/web.yml:ro
+
+  node:
+    image: bitnami/node-exporter
+
+  webhook:
+    image: grafana-webhook:0.2.1
+    #ports:
+    #  - 4000
+    env_file: ./grafana-webhook/grafana-webhook.env
+    environment:
+      - TZ=Europe/Moscow
+
