@@ -152,7 +152,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		te, _ := time.Parse(time.RFC3339, alert.EndsAt)
 		if (te.Format(tYear) != "0001") {
 			duration := te.Sub(ts)
-			msg = fmt.Sprintf("%sEnds  : %s\nDuration: %s\n", msg, te.Format(tLayout), duration)
+			msg = fmt.Sprintf("%sEnds  : %s\nElapsed: %s\n", msg, te.Format(tLayout), duration)
 		}
 		valuename, exists := alert.Labels["valuename"]
 		if !exists {
@@ -160,7 +160,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		}
 		value, exists := alert.Values[valuename]
 		if exists {
-			msg = fmt.Sprintf("%sValue :%f\n", msg, value)
+			msg = fmt.Sprintf("%sValue : %10.2f\n", msg, value)
 		}
 		msg = fmt.Sprintf("%s%s\n%s", msg, stars_M, alert.Annotations["summary"])
 
