@@ -214,7 +214,11 @@ func (a *App) sendImage(alert *AlertBody, msg string) (error) {
 	imageURL := alert.ImageURL
 	if len(imageURL) == 0 {
 		slog.Info("no Image")
-		return nil
+		_, err := a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
+				ChatID: a.chatID,
+				Text:   msg,
+		})
+		return err
 	}
 	u, err := url.Parse(imageURL)
 	if err != nil {
@@ -268,9 +272,9 @@ func (a *App) sendImage(alert *AlertBody, msg string) (error) {
 		Caption: msg,
 	}
 
-	a.bot.SendPhoto(a.ctx, params)
+	_, err = a.bot.SendPhoto(a.ctx, params)
 
-	return nil
+	return err
 
 
 }
