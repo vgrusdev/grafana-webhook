@@ -147,8 +147,18 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 			//status = "Resolved"
 			stars = stars_R
 		}
+		msg = fmt.Sprintf("%s\n", stars)
+
+		alertName := alert.Labels["alertname"]
+		ruleName  := alert.Labels["rulename"]
+		if alertName == "DatasourceNoData" {
+			msg = fmt.Sprintf("%sПропуск данных для правила \"%s\"\n", msg, ruleName)
+		} else {
+			msg = fmt.Sprintf("%s%s\n", msg, alertName)
+		}
+
 		ts, _ := time.Parse(time.RFC3339, alert.StartsAt)
-		msg = fmt.Sprintf("%s\n%s\nStarts: %s\n", stars, alert.Labels["alertname"], ts.Format(tLayout))
+		msg = fmt.Sprintf("%sStarts: %s\n", msg, ts.Format(tLayout))
 		te, _ := time.Parse(time.RFC3339, alert.EndsAt)
 		if (te.Format(tYear) != "0001") {
 			duration := te.Sub(ts)
