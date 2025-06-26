@@ -127,7 +127,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 
 	var msg string
 	var stars string
-	var annotation boolean
+	var annotation bool
 	
 	const tLayout  = "02.01 15:04:05"
 	const tYear    = "2006"
