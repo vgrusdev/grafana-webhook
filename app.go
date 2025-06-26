@@ -127,6 +127,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 
 	var msg string
 	var stars string
+	var annotation boolean
 	
 	const tLayout  = "02.01 15:04:05"
 	const tYear    = "2006"
@@ -151,8 +152,10 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 
 		alertName := alert.Labels["alertname"]
 		ruleName  := alert.Labels["rulename"]
+		annotation = true
 		if alertName == "DatasourceNoData" {
 			msg = fmt.Sprintf("%sПропуск данных для правила \"%s\"\n", msg, ruleName)
+			annotation = false
 		} else {
 			msg = fmt.Sprintf("%s%s\n", msg, alertName)
 		}
@@ -172,8 +175,11 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		if exists {
 			msg = fmt.Sprintf("%sValue : %8.2f\n", msg, value)
 		}
-		msg = fmt.Sprintf("%s%s\n%s", msg, stars_M, alert.Annotations["summary"])
-
+		if annotation == true {
+			msg = fmt.Sprintf("%s%s\n%s", msg, stars_M, alert.Annotations["summary"])
+		} else {
+			msg = fmt.Sprintf("%s%s", msg, stars)
+		}
 		fmt.Println(msg)
 
 		var chatID int64
