@@ -46,9 +46,16 @@ type Body struct {
 	Status		string					`json:"status,omitempty"`			// Current status of the alert, firing or resolved.
 	OrgId		int64					`json:"orgId,omitempty"`			// ID of the organization related to the payload.
 	Alerts		[]*AlertBody 			`json:"alerts,omitempty"`			//array of alerts	Alerts that are triggering.
+	GroupLabels	map[string]string		`json:"groupLabels,omitempty"`		//Labels that are used for grouping, map of string keys to string values
+	CommonLabels map[string]string		`json:"commonLabels,omitempty"`		//Labels that all alarms have in common, map of string keys to string values
+	CommonAnnotations map[string]string	`json:"commonAnnotations,omitempty"` //Annotations that all alarms have in common, map of string keys to string values
+	ExternalURL	string					`json:"commonLabels,omitempty"`		//External URL to the Grafana instance sending this webhook
 	Version		string					`json:"version,omitempty"`			// Version of the payload structure.
+	GroupKey	string					`json:"groupKey,omitempty"`			//Key that is used for grouping
 	TruncatedAlerts	int64				`json:"truncatedAlerts,omitempty"`	//number	Number of alerts that were truncated.
-	State		string					`json:"state,omitempty"`			//State of the alert group (either alerting or ok).
+	Title		string					`json:"title,omitempty"`			//Will be deprecated soon
+	State		string					`json:"state,omitempty"`			//Will be deprecated soon State of the alert group (either alerting or ok).
+	Message		string					`json:"message,omitempty"`			//Will be deprecated soon
 }
 
 type AlertBody struct {
@@ -58,6 +65,8 @@ type AlertBody struct {
 	StartsAt	string					`json:"startsAt,omitempty"`			// Start time of the alert.
 	EndsAt		string					`json:"endsAt,omitempty"`			// End time of the alert, default value when not resolved is 0001-01-01T00:00:00Z.
 	Values		map[string]interface{}	`json:"values,omitempty"`			// Values that triggered the current status.
+	GeneratorURL string					`json:"generatorURL,omitempty"`		// URL of the alert rule in the Grafana UI.
+	Fingerprint	string					`json:"fingerprint,omitempty"`		// The labels fingerprint, alarms with the same labels will have the same fingerprint.
 	SilenceURL	string					`json:"silenceURL,omitempty"`		// URL to silence the alert rule in the Grafana UI.
 	DashboardURL string					`json:"dashboardURL,omitempty"`		// A link to the Grafana Dashboard if the alert has a Dashboard UID annotation.
 	ImageURL	string					`json:"imageURL,omitempty"`			// URL of a screenshot of a panel assigned to the rule that created this notification.
