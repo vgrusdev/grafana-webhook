@@ -53,9 +53,9 @@ type Body struct {
 	Version		string					`json:"version,omitempty"`			// Version of the payload structure.
 	GroupKey	string					`json:"groupKey,omitempty"`			//Key that is used for grouping
 	TruncatedAlerts	int64				`json:"truncatedAlerts,omitempty"`	//number	Number of alerts that were truncated.
-	Title		string					`json:"title,omitempty"`			//Will be deprecated soon
-	State		string					`json:"state,omitempty"`			//Will be deprecated soon State of the alert group (either alerting or ok).
-	Message		string					`json:"message,omitempty"`			//Will be deprecated soon
+	Title		string					`json:"title,omitempty"`			//Custom title. Configurable in webhook settings using notification templates.
+	State		string					`json:"state,omitempty"`			//State of the alert group (either alerting or ok).
+	Message		string					`json:"message,omitempty"`			//Custom message. Configurable in webhook settings using notification templates.
 }
 
 type AlertBody struct {
@@ -117,6 +117,9 @@ func (a *App) Shutdown(ctx context.Context) {
 func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 	//var m map[string]interface{}
 	//var m Body
+
+	slog.Info("New Alert request", "from", r.RemoteAddr, "Length", strconv.FormatInt(r.ContentLength, 10))
+
 	m := &Body{}
 
 	//err := json.NewDecoder(r.Body).Decode(&m)
@@ -127,7 +130,9 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("m=%+v\n", *m)
+	fmt.Printf("Decoded body debug: m=%+v\n", *m)
+	fmt.Println("Message:")
+	fmt.Println(m.Mesage)
 
 	slog.Info("Alert-Webhook", "Common_Labels", *m)
 	slog.Info("Alert-Webhook", "Alerts_Count", len(m.Alerts))
