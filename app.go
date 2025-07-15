@@ -132,7 +132,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("Decoded body debug: m=%+v\n", *m)
 	fmt.Println("Message:")
-	fmt.Println(m.Mesage)
+	fmt.Println(m.Message)
 
 	slog.Info("Alert-Webhook", "Common_Labels", *m)
 	slog.Info("Alert-Webhook", "Alerts_Count", len(m.Alerts))
