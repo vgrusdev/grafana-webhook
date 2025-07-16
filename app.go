@@ -286,11 +286,12 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 	} else {
 		err = a.sendImage(alertImage, msg)
 		if err != nil {
-		slog.Error("Notify-Webhook. Send Image error, resend as a text.", "err", err)
-		_, err = a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
-			ChatID: chatID,
-			Text:   msg,
-		})
+			slog.Error("Notify-Webhook. Send Image error, resend as a text.", "err", err)
+			_, err = a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
+				ChatID: chatID,
+				Text:   msg,
+			})
+		}
 	}
 	if err == nil {
 		respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
