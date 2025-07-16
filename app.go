@@ -51,7 +51,7 @@ type Body struct {
 	CommonAnnotations map[string]string	`json:"commonAnnotations,omitempty"` //Annotations that all alarms have in common, map of string keys to string values
 	ExternalURL	string					`json:"commonLabels,omitempty"`		//External URL to the Grafana instance sending this webhook
 	Version		string					`json:"version,omitempty"`			// Version of the payload structure.
-	GroupKey	string					`json:"groupKey,omitempty"`			//Key that is used for grouping
+	//GroupKey	string					`json:"groupKey,omitempty"`			//Key that is used for grouping
 	TruncatedAlerts	int64				`json:"truncatedAlerts,omitempty"`	//number	Number of alerts that were truncated.
 	Title		string					`json:"title,omitempty"`			//Custom title. Configurable in webhook settings using notification templates.
 	State		string					`json:"state,omitempty"`			//State of the alert group (either alerting or ok).
@@ -84,7 +84,8 @@ func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, add
 
 	a.router = mux.NewRouter()
 	// a.router.HandleFunc("health", HealthCheck).Methods("GET")
-	a.router.HandleFunc("/alert", a.Alert).Methods("POST")
+	a.router.HandleFunc("/alert", a.Alert).Methods("POST")	// Use per-Alert annotation, labels, images
+	a.router.HandleFunc("/notify", a.Notify).Methods("POST") // Use Notification Group Message. Only first Immage if there is any.
 
 	a.srv = &http.Server{
 		Handler:      a.router,
@@ -130,12 +131,12 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("Decoded body debug: m=%+v\n", *m)
-	fmt.Println("Message:")
-	fmt.Println(m.Message)
+	//fmt.Printf("Decoded body debug: m=%+v\n", *m)
+	//fmt.Println("Message:")
+	//fmt.Println(m.Message)
 
-	slog.Info("Alert-Webhook", "Common_Labels", *m)
-	slog.Info("Alert-Webhook", "Alerts_Count", len(m.Alerts))
+	slog.Debug("Alert-Webhook", "Common_Labels", *m)
+	slog.Debug("Alert-Webhook", "Alerts_Count", len(m.Alerts))
 
 	//fmt.Printf("Alerts array len = %d\n", len(m.Alerts))
 
@@ -210,25 +211,94 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 			chatID = a.chatID
 		}
 		
-		fmt.Printf("ChatID=%d\n", chatID)
+		//fmt.Printf("ChatID=%d\n", chatID)
 
 		//a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
 		//	ChatID: chatID,
 		//	Text:   msg,
 		//})
 
+		slog.Info("Alert-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10))
 		err = a.sendImage(alert, msg)
 		if err != nil {
-			slog.Error("Send Image", "err", err)
+			slog.Error("Alert-Webhook. Send Image", "err", err)
 			a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
 				ChatID: chatID,
 				Text:   msg,
 			})
 		} 
-
 		
-	}
+	}	// for i, alert := range m.Alerts
 	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
+}
+
+func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
+
+	slog.Info("New Alert - Notify request", "from", r.RemoteAddr, "Length", strconv.FormatInt(r.ContentLength, 10))
+	m := &Body{}
+	err := json.NewDecoder(r.Body).Decode(m)
+	if err != nil {
+		slog.Error("Notify-Webhook", "err", err)
+		respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message":"Invalid JSON Format"})
+		return
+	}
+
+	slog.Debug("Notify-Webhook", "Common_Labels", *m)
+	slog.Debug("Notify-Webhook", "Alerts_Count", len(m.Alerts))
+
+	var msg string
+	var alertImage *AlertBody
+	var chatID int64
+
+	chatID = -1
+	alertImage = nil
+	msg = m.Message
+
+	slog.Info("Alert-Notify. Search Image URL")
+	for i, alert := range m.Alerts {
+		slog.Info("Alert-Notify", "Alert_Num", i+1, "json", *alert)
+		if len(alert.imageURL) > 0 {
+			alertImage = alert
+			chatID_s, exists := alert.Labels["chatID"]
+			if exists {
+				chatID, err = strconv.ParseInt(chatID_s, 10, 64)
+				if err != nil {
+					slog.Error("Grafana ChatID Label is incorrect.", "err=", err)
+					chatID = -1
+				}
+			}
+			break
+		}
+	}
+	if chatID == -1 {
+		chatID = a.chatID
+	}
+	fmt.Println(msg)
+
+	slog.Info("Notify-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10))
+
+	if alertImage == nil {
+		slog.Info("Notify-Webhook. No Image")
+		_, err = a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
+			ChatID: chatID,
+			Text:   msg,
+		})
+	} else {
+		err = a.sendImage(alertImage, msg)
+		if err != nil {
+		slog.Error("Notify-Webhook. Send Image error, resend as a text.", "err", err)
+		_, err = a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
+			ChatID: chatID,
+			Text:   msg,
+		})
+	}
+	if err == nil {
+		respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
+		slog.Info("Notify-Webhook. Sent to Telegram successfully")
+	} else {
+		slog.Error("Notify-Webhook. Telegram Send Error", "err", err)
+		respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message":"Telegram send error"})
+	}
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
