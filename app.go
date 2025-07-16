@@ -257,7 +257,7 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Alert-Notify. Search Image URL")
 	for i, alert := range m.Alerts {
 		slog.Info("Alert-Notify", "Alert_Num", i+1, "json", *alert)
-		if len(alert.imageURL) > 0 {
+		if len(alert.ImageURL) > 0 {
 			alertImage = alert
 			chatID_s, exists := alert.Labels["chatID"]
 			if exists {
