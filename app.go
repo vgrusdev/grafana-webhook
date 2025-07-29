@@ -116,14 +116,16 @@ func (a *App) Shutdown(ctx context.Context) {
 }
 
 func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
+	// Processes json Body of alerts in the loop one-by-one alert.
+
+
 	//var m map[string]interface{}
 	//var m Body
 
 	slog.Info("New Alert request", "from", r.RemoteAddr, "Length", strconv.FormatInt(r.ContentLength, 10))
 
-	m := &Body{}
+	m := &Body{}	// top-level body of alerts, containing common labels, links, etc
 
-	//err := json.NewDecoder(r.Body).Decode(&m)
 	err := json.NewDecoder(r.Body).Decode(m)
 	if err != nil {
 		slog.Error("Alert", "err", err)
@@ -132,10 +134,9 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//fmt.Printf("Decoded body debug: m=%+v\n", *m)
-	//fmt.Println("Message:")
-	//fmt.Println(m.Message)
+	//fmt.Println("")
 
-	slog.Debug("Alert-Webhook", "Common_Labels", *m)
+	slog.Debug("Alert-Webhook", "Top_level_Body_Common_Labels", *m)
 	slog.Debug("Alert-Webhook", "Alerts_Count", len(m.Alerts))
 
 	//fmt.Printf("Alerts array len = %d\n", len(m.Alerts))
@@ -182,6 +183,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 			duration := te.Sub(ts)
 			msg = fmt.Sprintf("%sEnds  : %s\nElapsed: %s\n", msg, te.Format(tLayout), duration)
 		}
+
 		valuename, exists := alert.Labels["valuename"]
 		if !exists {
 			valuename = "A"
@@ -204,30 +206,33 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		if exists {
 			chatID, err = strconv.ParseInt(chatID_s, 10, 64)
 			if err != nil {
-				slog.Error("Grafana ChatID Label is incorrect.", "err=", err)
+				slog.Error("Alert-Webhook. Grafana \"chatID\" Label is incorrect.", "err=", err)
 				chatID = -1
 			}
 		} else {
 			chatID = a.chatID
 		}
 		
-		//fmt.Printf("ChatID=%d\n", chatID)
+		if chatID == -1 {
+			slog.Warn("Alert-Webhook. Will not send to Telegram die to incorrect ChatID", "ChatID", strconv.FormatInt(chatID, 10))
+		} else {
+			slog.Info("Alert-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10))
 
-		//a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
-		//	ChatID: chatID,
-		//	Text:   msg,
-		//})
+			fileName, err := a.getImageFileMinio(alert)
+			if fileName != nil {
+				defer os.Remove(filename)
+			}
+			if err != nil {
+				slog.Error("Alert-Webhook", "err", err)
+			}
 
-		slog.Info("Alert-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10))
-		err = a.sendImage(alert, msg)
-		if err != nil {
-			slog.Error("Alert-Webhook. Send Image", "err", err)
-			a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
-				ChatID: chatID,
-				Text:   msg,
-			})
-		} 
-		
+			err = a.directTelegram(chatID, msg, fileName)
+			if err != nil {
+				slog.Error("Alert-Webhook", "err", err)
+			} else {
+				slog.Info("Alert-Webhook, Telegram sent success")
+			}
+		}
 	}	// for i, alert := range m.Alerts
 	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
 }
@@ -247,23 +252,23 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Notify-Webhook", "Alerts_Count", len(m.Alerts))
 
 	var msg string
-	var alertImage *AlertBody
+	var alertWithImage *AlertBody
 	var chatID int64
 
 	chatID = -1
-	alertImage = nil
+	alertWithImage = nil
 	msg = m.Message
 
-	slog.Info("Alert-Notify. Search Image URL")
+	slog.Info("Notify-Webhook. Search Image URL")
 	for i, alert := range m.Alerts {
-		slog.Info("Alert-Notify", "Alert_Num", i+1, "json", *alert)
+		slog.Info("Notify-Webhook", "Alert_Num", i+1, "json", *alert)
 		if len(alert.ImageURL) > 0 {
-			alertImage = alert
+			alertWithImage = alert
 			chatID_s, exists := alert.Labels["chatID"]
 			if exists {
 				chatID, err = strconv.ParseInt(chatID_s, 10, 64)
 				if err != nil {
-					slog.Error("Grafana ChatID Label is incorrect.", "err=", err)
+					slog.Error("Notify-Webhook. Grafana ChatID Label is incorrect.", "err=", err)
 					chatID = -1
 				}
 			}
@@ -275,30 +280,27 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println(msg)
 
+	if chatID == -1 {
+			slog.Warn("Notify-Webhook. Will not send to Telegram die to incorrect ChatID", "ChatID", strconv.FormatInt(chatID, 10))
+			respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message":"Incorrect Telegram chatID"})
+			return
+	} 
 	slog.Info("Notify-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10))
 
-	if alertImage == nil {
-		slog.Info("Notify-Webhook. No Image")
-		_, err = a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
-			ChatID: chatID,
-			Text:   msg,
-		})
-	} else {
-		err = a.sendImage(alertImage, msg)
-		if err != nil {
-			slog.Error("Notify-Webhook. Send Image error, resend as a text.", "err", err)
-			_, err = a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
-				ChatID: chatID,
-				Text:   msg,
-			})
-		}
+	fileName, err := a.getImageFileMinio(alertWithImage)
+	if fileName != nil {
+		defer os.Remove(filename)
 	}
-	if err == nil {
-		respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
-		slog.Info("Notify-Webhook. Sent to Telegram successfully")
-	} else {
-		slog.Error("Notify-Webhook. Telegram Send Error", "err", err)
+	if err != nil {
+		slog.Error("Notify-Webhook", "err", err)
+	}
+	err = a.directTelegram(chatID, msg, fileName)
+	if err != nil {
+		slog.Error("Notify-Webhook, Telegram send error", "err", err)
 		respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message":"Telegram send error"})
+	} else {
+		slog.Info("Notify-Webhook, Telegram sent success")
+		respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
 	}
 }
 
@@ -310,21 +312,27 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
-func (a *App) sendImage(alert *AlertBody, msg string) (error) {
+func (a *App) getImageFileMinio (alert *AlertBody) (string, error) {
+	// return string - 	filename, do not forget to remove it after being used, 
+	// 					or nil, if there is no image in the alert body.
+	// error - in case of error downloading image (except no-Image case, when err = nil)
 
+	if alert == nil {
+		slog.Info("getImage: no Image")
+		//return nil, fmt.Errorf("getImage, warning: no Image")
+		return nil, nil
+	}
 	imageURL := alert.ImageURL
 	if len(imageURL) == 0 {
-		slog.Info("no Image")
-		_, err := a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
-				ChatID: a.chatID,
-				Text:   msg,
-		})
-		return err
+		slog.Info("getImage: no Image")
+		//return nil, fmt.Errorf("getImage, warning: no Image")
+		return nil, nil
 	}
 	u, err := url.Parse(imageURL)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("getImage: %w", err)
 	}
+
 	host := u.Hostname()
 	if len(a.myMinio.host) > 0 {
 		host = a.myMinio.host
@@ -343,15 +351,13 @@ func (a *App) sendImage(alert *AlertBody, msg string) (error) {
 		Secure: false,
 	})
 	if err != nil {
-		slog.Error("Minio client create error. Will not send images.", "err", err)
-		return err
+		return nil, fmt.Errorf("getImage. Minio client create error. Will not send images: %w", err)
 	}
 
 	path := strings.TrimPrefix(u.Path, "/")
 	bucket, object, found := strings.Cut(path, "/")
 	if found == false {
-		slog.Info("no filename", "Path", path)
-		return nil
+		return nil, fmt.Errorf("getImage, no filename %s", path)
 	}
 	ss := strings.Split(object, "/")
 	filePath := "/tmp/" + ss[len(ss)-1]
@@ -359,26 +365,16 @@ func (a *App) sendImage(alert *AlertBody, msg string) (error) {
 	// Picture download from Minio
 	err = mClient.FGetObject(a.ctx, bucket, object, filePath, minio.GetObjectOptions{})
     if err != nil {
-		return err
+		return nil, fmt.Errorf("getImage, image download: %w", err)
     }
+	return filePath, nil
+}
 
-	fileData, errReadFile := os.ReadFile(filePath)
-	if errReadFile != nil {
-		return errReadFile
-	}
-
-	params := &bot.SendPhotoParams{
-		ChatID:  a.chatID,
-		Photo:   &models.InputFileUpload{Filename: filePath, Data: bytes.NewReader(fileData)},
-		Caption: msg,
-	}
-
-	_, err = a.bot.SendPhoto(a.ctx, params)
-
-	return err
+func (a *App) sendAtclient(alert *AlertBody, msg string) (error) {
 
 
 }
+
 /*
 json="	map[
 			alerts:[

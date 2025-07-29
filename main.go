@@ -24,12 +24,12 @@ func main() {
 	}
 	chatID_s := os.Getenv("TELEGRAM_CHAT_ID")
 	if len(chatID_s) == 0 {
-		slog.Warn("TELEGRAM_CHAT_ID env is not set. Use ChatID Label in Grafana Alerts.")
+		slog.Warn("TELEGRAM_CHAT_ID env is not set. Use \"chatID\" Label in Grafana Alerts to assign Telegram bot chatID.")
 		chatID = -1
 	} else {
 		chatID, err = strconv.ParseInt(chatID_s, 10, 64)
 		if err != nil {
-			slog.Error("TELEGRAM_CHAT_ID env is not integer. Use -1 if you wand to use ChatID Label in Grafana Alerts.")
+			slog.Error("TELEGRAM_CHAT_ID env is not integer. Use -1 if you want to use \"chatID\" Label in Grafana Alerts.")
 			return
 		}
 	}
