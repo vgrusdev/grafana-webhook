@@ -239,7 +239,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 
 			fileName, err := a.getImageFileMinio(alert)
 			if len(fileName) > 0 {
-				defer os.Remove(filename)
+				defer os.Remove(fileName)
 			}
 			if err != nil {
 				slog.Error("Alert-Webhook", "err", err)
@@ -447,12 +447,12 @@ func (a *App) directTelegram(chatID int64, msg string, fileName string) (error) 
 	var err error
 
 	if len(fileName) == 0 {
-		_, err := a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
+		_, err = a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
 				ChatID: chatID,
 				Text:   msg,
 		})
 	} else {
-		fileData, err := os.ReadFile(fileName)
+		fileData, err = os.ReadFile(fileName)
 		if err != nil {
 			slog.Error("directTelegram. file read error", "fileName", fileName, "err", err)
 			_, err := a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
@@ -463,7 +463,7 @@ func (a *App) directTelegram(chatID int64, msg string, fileName string) (error) 
 		}
 		_, err = a.bot.SendPhoto(a.ctx, &bot.SendPhotoParams{
 			ChatID:  chatID,
-			Photo:   &models.InputFileUpload{Filename: filePath, Data: bytes.NewReader(fileData)},
+			Photo:   &models.InputFileUpload{Filename: fileName, Data: bytes.NewReader(fileData)},
 			Caption: msg,
 		})
 	}
@@ -541,10 +541,10 @@ func (a *App) sendImage(alert *AlertBody, msg string) (error) {
 
 
 
-func (a *App) sendAtclient(alert *AlertBody, msg string) (error) {
-
-
-}
+//func (a *App) sendAtclient(alert *AlertBody, msg string) (error) {
+//
+//
+//}
 
 /*
 json="	map[
