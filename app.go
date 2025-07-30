@@ -238,7 +238,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 			slog.Info("Alert-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10), "TELEGRAM_METHOD", tMethod)
 
 			fileName, err := a.getImageFileMinio(alert)
-			if fileName != nil {
+			if len(fileName) > 0 {
 				defer os.Remove(filename)
 			}
 			if err != nil {
@@ -355,8 +355,8 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Notify-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10))
 
 	fileName, err := a.getImageFileMinio(alertWithImage)
-	if fileName != nil {
-		defer os.Remove(filename)
+	if len(fileName) > 0 {
+		defer os.Remove(fileName)
 	}
 	if err != nil {
 		slog.Error("Notify-Webhook", "err", err)
@@ -385,24 +385,24 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 }
 
 func (a *App) getImageFileMinio (alert *AlertBody) (string, error) {
-	// return string - 	filename, do not forget to remove it after being used, 
-	// 					or nil, if there is no image in the alert body.
+	// return string - 	fileName, do not forget to remove it after being used, 
+	// 					or "", if there is no image in the alert body.
 	// error - in case of error downloading image (except no-Image case, when err = nil)
 
 	if alert == nil {
 		slog.Info("getImage: no Image")
 		//return nil, fmt.Errorf("getImage, warning: no Image")
-		return nil, nil
+		return "", nil
 	}
 	imageURL := alert.ImageURL
 	if len(imageURL) == 0 {
 		slog.Info("getImage: no Image")
 		//return nil, fmt.Errorf("getImage, warning: no Image")
-		return nil, nil
+		return "", nil
 	}
 	u, err := url.Parse(imageURL)
 	if err != nil {
-		return nil, fmt.Errorf("getImage: %w", err)
+		return "", fmt.Errorf("getImage: %w", err)
 	}
 
 	host := u.Hostname()
@@ -423,13 +423,13 @@ func (a *App) getImageFileMinio (alert *AlertBody) (string, error) {
 		Secure: false,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("getImage. Minio client create error. Will not send images: %w", err)
+		return "", fmt.Errorf("getImage. Minio client create error. Will not send images: %w", err)
 	}
 
 	path := strings.TrimPrefix(u.Path, "/")
 	bucket, object, found := strings.Cut(path, "/")
 	if found == false {
-		return nil, fmt.Errorf("getImage, no filename %s", path)
+		return "", fmt.Errorf("getImage, no filename %s", path)
 	}
 	ss := strings.Split(object, "/")
 	filePath := "/tmp/" + ss[len(ss)-1]
@@ -437,10 +437,109 @@ func (a *App) getImageFileMinio (alert *AlertBody) (string, error) {
 	// Picture download from Minio
 	err = mClient.FGetObject(a.ctx, bucket, object, filePath, minio.GetObjectOptions{})
     if err != nil {
-		return nil, fmt.Errorf("getImage, image download: %w", err)
+		return "", fmt.Errorf("getImage, image download: %w", err)
     }
 	return filePath, nil
 }
+
+func (a *App) directTelegram(chatID int64, msg string, fileName string) (error) {
+
+	var err error
+
+	if len(fileName) == 0 {
+		_, err := a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
+				ChatID: chatID,
+				Text:   msg,
+		})
+	} else {
+		fileData, err := os.ReadFile(fileName)
+		if err != nil {
+			slog.Error("directTelegram. file read error", "fileName", fileName, "err", err)
+			_, err := a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
+			ChatID: chatID,
+			Text:   msg,
+			})
+			return err
+		}
+		_, err = a.bot.SendPhoto(a.ctx, &bot.SendPhotoParams{
+			ChatID:  chatID,
+			Photo:   &models.InputFileUpload{Filename: filePath, Data: bytes.NewReader(fileData)},
+			Caption: msg,
+		})
+	}
+	return err
+}
+func (a *App) sendImage(alert *AlertBody, msg string) (error) {
+
+	imageURL := alert.ImageURL
+	if len(imageURL) == 0 {
+		slog.Info("no Image")
+		_, err := a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
+				ChatID: a.chatID,
+				Text:   msg,
+		})
+		return err
+	}
+	u, err := url.Parse(imageURL)
+	if err != nil {
+		return err
+	}
+	host := u.Hostname()
+	if len(a.myMinio.host) > 0 {
+		host = a.myMinio.host
+	}
+	port := u.Port()
+	if len(a.myMinio.port) > 0 {
+		port = a.myMinio.port
+	}
+	if len(port) > 0 {
+		host = host + ":" + port
+	}
+
+	// Minio client
+	mClient, err := minio.New(host, &minio.Options{
+		Creds:  credentials.NewStaticV4(a.myMinio.key, a.myMinio.secret, ""),
+		Secure: false,
+	})
+	if err != nil {
+		slog.Error("Minio client create error. Will not send images.", "err", err)
+		return err
+	}
+
+	path := strings.TrimPrefix(u.Path, "/")
+	bucket, object, found := strings.Cut(path, "/")
+	if found == false {
+		slog.Info("no filename", "Path", path)
+		return nil
+	}
+	ss := strings.Split(object, "/")
+	filePath := "/tmp/" + ss[len(ss)-1]
+
+	// Picture download from Minio
+	err = mClient.FGetObject(a.ctx, bucket, object, filePath, minio.GetObjectOptions{})
+    if err != nil {
+		return err
+    }
+
+	fileData, errReadFile := os.ReadFile(filePath)
+	if errReadFile != nil {
+		return errReadFile
+	}
+
+	params := &bot.SendPhotoParams{
+		ChatID:  a.chatID,
+		Photo:   &models.InputFileUpload{Filename: filePath, Data: bytes.NewReader(fileData)},
+		Caption: msg,
+	}
+
+	_, err = a.bot.SendPhoto(a.ctx, params)
+
+	return err
+
+
+}
+
+
 
 func (a *App) sendAtclient(alert *AlertBody, msg string) (error) {
 
