@@ -445,6 +445,7 @@ func (a *App) getImageFileMinio (alert *AlertBody) (string, error) {
 func (a *App) directTelegram(chatID int64, msg string, fileName string) (error) {
 
 	var err error
+	var fileData byte
 
 	if len(fileName) == 0 {
 		_, err = a.bot.SendMessage(a.ctx, &bot.SendMessageParams{
