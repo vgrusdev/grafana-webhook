@@ -32,6 +32,7 @@ type App struct {
 	bot		*bot.Bot
 	chatID  int64
 	myMinio *myMinio_t
+	tMethod string
 }
 
 type myMinio_t struct {
@@ -72,7 +73,7 @@ type AlertBody struct {
 	ImageURL	string					`json:"imageURL,omitempty"`			// URL of a screenshot of a panel assigned to the rule that created this notification.
 }
 
-func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, addr string, myMinio *myMinio_t ) (error) {
+func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, addr string, myMinio *myMinio_t, tMethod string ) (error) {
 
 	b, err := bot.New(botToken)
     if err != nil {
@@ -81,6 +82,7 @@ func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, add
 	a.bot = b
 	a.chatID = chatID
 	a.ctx = ctx
+	a.tMethod = tMethod
 
 	a.router = mux.NewRouter()
 	// a.router.HandleFunc("health", HealthCheck).Methods("GET")
@@ -200,8 +202,11 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(msg)
 
 		var chatID int64
+		var tMethod string
 
 		chatID = -1
+		tMethod = "DIRECT"
+
 		chatID_s, exists := alert.Labels["chatID"]
 		if exists {
 			chatID, err = strconv.ParseInt(chatID_s, 10, 64)
@@ -216,7 +221,21 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		if chatID == -1 {
 			slog.Warn("Alert-Webhook. Will not send to Telegram die to incorrect ChatID", "ChatID", strconv.FormatInt(chatID, 10))
 		} else {
-			slog.Info("Alert-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10))
+
+			tMethod, exists = alert.Labels["tMethod"]
+			if exists {
+				if (tMethod != "DIRECT") && (tMethod != "ATCLIENT") {
+					slog.Warn("Alert-Webhook. Incorrect \"tMethod\" Label set.")
+					tMethod = ""
+				}
+			} else {
+				tMethod = ""
+			}
+			if len(tMethod) = 0 {
+				tMethod = a.tMethod
+			}
+
+			slog.Info("Alert-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10), "TELEGRAM_METHOD", tMethod)
 
 			fileName, err := a.getImageFileMinio(alert)
 			if fileName != nil {
@@ -226,11 +245,15 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 				slog.Error("Alert-Webhook", "err", err)
 			}
 
-			err = a.directTelegram(chatID, msg, fileName)
-			if err != nil {
-				slog.Error("Alert-Webhook", "err", err)
-			} else {
-				slog.Info("Alert-Webhook, Telegram sent success")
+			if tMethod == "ATCLIENT" {
+
+			} else {		// DIRECT
+				err = a.directTelegram(chatID, msg, fileName)
+				if err != nil {
+					slog.Error("Alert-Webhook", "err", err)
+				} else {
+					slog.Info("Alert-Webhook, Telegram sent success")
+				}
 			}
 		}
 	}	// for i, alert := range m.Alerts
@@ -254,16 +277,24 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 	var msg string
 	var alertWithImage *AlertBody
 	var chatID int64
+	var tMethod string
+
+	//var chatID_s string
+	//var exists   bool
 
 	chatID = -1
+	tMethod = ""
 	alertWithImage = nil
 	msg = m.Message
 
 	slog.Info("Notify-Webhook. Search Image URL")
+
 	for i, alert := range m.Alerts {
 		slog.Info("Notify-Webhook", "Alert_Num", i+1, "json", *alert)
-		if len(alert.ImageURL) > 0 {
+
+		if len(alert.ImageURL) > 0 {	// Image URL exists !
 			alertWithImage = alert
+
 			chatID_s, exists := alert.Labels["chatID"]
 			if exists {
 				chatID, err = strconv.ParseInt(chatID_s, 10, 64)
@@ -271,13 +302,49 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 					slog.Error("Notify-Webhook. Grafana ChatID Label is incorrect.", "err=", err)
 					chatID = -1
 				}
+			} else {
+				chatID = -1
+			}
+			tMethod, exists := alert.Labels["tMethod"]
+			if exists {
+				if (tMethod != "DIRECT") && (tMethod != "ATCLIENT") {
+					slog.Warn("Notofy-Webhook. Incorrect \"tMethod\" Label set. will use DIRECT as default".)
+					tMethod = "DIRECT"
+				}
+			} else {
+				tMethod = ""
 			}
 			break
+		}
+		if chatID == -1 {
+			chatID_s, exists := alert.Labels["chatID"]
+			if exists {
+				chatID, err = strconv.ParseInt(chatID_s, 10, 64)
+				if err != nil {
+					slog.Warn("Notify-Webhook. Grafana ChatID Label is incorrect.", "err=", err)
+					chatID = -1
+				}
+			}	
+		}
+		if len(tMethod) == 0 {
+			tMethod, exists := alert.Labels["tMethod"]
+			if exists {
+				if (tMethod != "DIRECT") && (tMethod != "ATCLIENT") {
+					slog.Warn("Notofy-Webhook. Incorrect \"tMethod\" Label set. will use DIRECT as default".)
+					tMethod = "DIRECT"
+				}
+			} else {
+				tMethod = ""
+			}
 		}
 	}
 	if chatID == -1 {
 		chatID = a.chatID
 	}
+	if len(tMethod) == 0 {
+		tMethod = a.tMethod
+	}
+
 	fmt.Println(msg)
 
 	if chatID == -1 {
@@ -294,13 +361,18 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("Notify-Webhook", "err", err)
 	}
-	err = a.directTelegram(chatID, msg, fileName)
-	if err != nil {
-		slog.Error("Notify-Webhook, Telegram send error", "err", err)
-		respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message":"Telegram send error"})
-	} else {
-		slog.Info("Notify-Webhook, Telegram sent success")
-		respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
+	if tMethod == "ATCLIENT" {
+
+	} else {		// DIRECT
+
+		err = a.directTelegram(chatID, msg, fileName)
+		if err != nil {
+			slog.Error("Notify-Webhook, Telegram send error", "err", err)
+			respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message":"Telegram send error"})
+		} else {
+			slog.Info("Notify-Webhook, Telegram sent success")
+			respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
+		}
 	}
 }
 

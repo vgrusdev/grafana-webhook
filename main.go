@@ -16,6 +16,7 @@ func main() {
 	var botToken string
 	var chatID   int64
 	var err		 error
+	var tMethod	string
 
 	botToken = os.Getenv("TELEGRAM_BOT_TOKEN")
 	if len(botToken) == 0 {
@@ -33,6 +34,14 @@ func main() {
 			return
 		}
 	}
+	tMethod = os.Getenv("TELEGRAM_METHOD")
+	if (len(tMethod) == 0) || ((tMethod != "DIRECT") && (tMethod != "ATCLIENT")) {
+		slog.Warn("TELEGRAM_METHOD env is not set or incorrect. Options are: \"DIRECT\"(d) or \"ATCLIENT\". It can be owerwritten by \"tMethod\" Label in Grafana Alert.")
+		tMethod = "DIRECT"
+	} else {
+		slog.Info("tMethod is set.", "TELEGRAM_METHOD", tMethod)
+	}
+
 	whPort := os.Getenv("WEBHOOK_PORT")
 	if len(whPort) == 0 {
 		slog.Warn("WEBHOOK_PORT env is not set. Use default port 4000")
@@ -52,7 +61,7 @@ func main() {
 	ctxBot, cancelBot := context.WithCancel(context.Background())
     defer cancelBot()
 
-	err = a.Initialize(ctxBot, botToken, chatID, whPort, myMinio)
+	err = a.Initialize(ctxBot, botToken, chatID, whPort, myMinio, tMethod)
 	if err != nil {
 		slog.Error("Init", "err", err)
 		cancelBot()
