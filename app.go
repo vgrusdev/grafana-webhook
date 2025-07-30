@@ -352,7 +352,7 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 			respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message":"Incorrect Telegram chatID"})
 			return
 	} 
-	slog.Info("Notify-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10))
+	slog.Info("Notify-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10), "TELEGRAM_METHOD", tMethod)
 
 	fileName, err := a.getImageFileMinio(alertWithImage)
 	if len(fileName) > 0 {
