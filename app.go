@@ -231,7 +231,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 			} else {
 				tMethod = ""
 			}
-			if len(tMethod) = 0 {
+			if len(tMethod) == 0 {
 				tMethod = a.tMethod
 			}
 
@@ -308,7 +308,7 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 			tMethod, exists := alert.Labels["tMethod"]
 			if exists {
 				if (tMethod != "DIRECT") && (tMethod != "ATCLIENT") {
-					slog.Warn("Notofy-Webhook. Incorrect \"tMethod\" Label set. will use DIRECT as default".)
+					slog.Warn("Notofy-Webhook. Incorrect \"tMethod\" Label set. will use DIRECT as default")
 					tMethod = "DIRECT"
 				}
 			} else {
@@ -330,7 +330,7 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 			tMethod, exists := alert.Labels["tMethod"]
 			if exists {
 				if (tMethod != "DIRECT") && (tMethod != "ATCLIENT") {
-					slog.Warn("Notofy-Webhook. Incorrect \"tMethod\" Label set. will use DIRECT as default".)
+					slog.Warn("Notofy-Webhook. Incorrect \"tMethod\" Label set. will use DIRECT as default")
 					tMethod = "DIRECT"
 				}
 			} else {
