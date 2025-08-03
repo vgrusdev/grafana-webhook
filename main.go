@@ -10,19 +10,24 @@ import (
 )
 
 func main() {
+
 	a := App{}
 
 	
 	var botToken string
 	var chatID   int64
 	var err		 error
-	var tMethod	string
 
+	// Bot Token. Required parameter. Allowed options are:
+	// "ATCLIENT" - in the case external java scipt with embedded bot parameters is used to send Telegram messages,
+	//				do not forget to setup ATCLIENT_xxx env
+	// "bot_token" - string for Direct to Telegram sending.
 	botToken = os.Getenv("TELEGRAM_BOT_TOKEN")
 	if len(botToken) == 0 {
 		slog.Error("TELEGRAM_BOT_TOKEN env is not set.")
 		return
 	}
+
 	chatID_s := os.Getenv("TELEGRAM_CHAT_ID")
 	if len(chatID_s) == 0 {
 		slog.Warn("TELEGRAM_CHAT_ID env is not set. Use \"chatID\" Label in Grafana Alerts to assign Telegram bot chatID.")
@@ -34,13 +39,6 @@ func main() {
 			return
 		}
 	}
-	tMethod = os.Getenv("TELEGRAM_METHOD")
-	if (len(tMethod) == 0) || ((tMethod != "DIRECT") && (tMethod != "ATCLIENT")) {
-		slog.Warn("TELEGRAM_METHOD env is not set or incorrect. Options are: \"DIRECT\"(d) or \"ATCLIENT\". It can be owerwritten by \"tMethod\" Label in Grafana Alert.")
-		tMethod = "DIRECT"
-	} else {
-		slog.Info("tMethod is set.", "TELEGRAM_METHOD", tMethod)
-	}
 
 	whPort := os.Getenv("WEBHOOK_PORT")
 	if len(whPort) == 0 {
@@ -50,6 +48,8 @@ func main() {
 
 	var myMinio *myMinio_t
 
+	// Grafana needs to have options to save rendered images in teh S3 (MIMIO) storage.
+	// Setup MINIO server parameters to have images processed.
 	myMinio = &myMinio_t {
 		host:	os.Getenv("MINIO_HOST"),
 		port:	os.Getenv("MINIO_PORT"),
@@ -57,11 +57,60 @@ func main() {
 		secret:	os.Getenv("MINIO_SECRET"),
 	}
 
+	// Initialise atClient
+
+	var atClient *atClient_t
+
+	if botToken == "ATCLIENT" {
+		atClient = &atClient_t {
+			javaPath: "java",
+			javaParam: []string{"-Xmx2048m", "-Dfile.encoding=UTF-8"},
+			jarPath: "atclient.jar",
+			botServer: "botserver",
+			port: "8888",
+			timeout: 1*time.Second,
+		}
+		env := os.Getenv("ATCLIENT_JAVAPATH")
+		if len(env) > 0 {
+			atClient.javaPath = env
+		}
+		env = os.Getenv("ATCLIENT_PARAM")
+		if len(env) > 0 {
+			atClient.javaParam = strings.FieldsFunc(env, func(c rune) bool {
+														return c == ' ' || c == ',' || c == ';'
+														})
+		}
+		env = os.Getenv("ATCLIENT_JARPATH")
+		if len(env) > 0 {
+			atClient.jarPath = env
+		}
+		env = os.Getenv("ATCLIENT_BOTSERVER")
+		if len(env) > 0 {
+			atClient.botServer = env
+		}
+		env = os.Getenv("ATCLIENT_PORT")
+		if len(env) > 0 {
+			atClient.port = env
+		}
+		env = os.Getenv("ATCLIENT_TIMEOUT")
+		if len(env) > 0 {
+			t, err := time.ParseDuration(env)
+			if err != nill {
+				slog.Warn("ATCLIENT_TIMEOUT", "time.Duration format error", err)
+			} else {
+				atClient.timeout = t
+			}
+		}
+	} else {
+		atClient = nil
+	}
+
+
 	// bot context with cancel func
 	ctxBot, cancelBot := context.WithCancel(context.Background())
     defer cancelBot()
 
-	err = a.Initialize(ctxBot, botToken, chatID, whPort, myMinio, tMethod)
+	err = a.Initialize(ctxBot, botToken, chatID, whPort, myMinio, atClient)
 	if err != nil {
 		slog.Error("Init", "err", err)
 		cancelBot()

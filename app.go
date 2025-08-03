@@ -26,13 +26,13 @@ import (
 )
 
 type App struct {
-	router 	*mux.Router
+	//router 	*mux.Router
 	srv     *http.Server
 	ctx		context.Context
 	bot		*bot.Bot
 	chatID  int64
 	myMinio *myMinio_t
-	tMethod string
+	atClient *atClient_t
 }
 
 type myMinio_t struct {
@@ -73,30 +73,33 @@ type AlertBody struct {
 	ImageURL	string					`json:"imageURL,omitempty"`			// URL of a screenshot of a panel assigned to the rule that created this notification.
 }
 
-func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, addr string, myMinio *myMinio_t, tMethod string ) (error) {
+func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, addr string, myMinio *myMinio_t, atClient *atClient_t ) (error) {
 
-	b, err := bot.New(botToken)
-    if err != nil {
-		return err
-    }
-	a.bot = b
+	if botToken == "ATCLIENT" {
+		a.bot = nil
+	} else {
+		a.bot, err := bot.New(botToken)
+    	if err != nil {
+			return err
+    	}
+	}
 	a.chatID = chatID
 	a.ctx = ctx
-	a.tMethod = tMethod
 
-	a.router = mux.NewRouter()
-	// a.router.HandleFunc("health", HealthCheck).Methods("GET")
-	a.router.HandleFunc("/alert", a.Alert).Methods("POST")	// Use per-Alert annotation, labels, images
-	a.router.HandleFunc("/notify", a.Notify).Methods("POST") // Use Notification Group Message. Only first Immage if there is any.
+	router := mux.NewRouter()
+	// router.HandleFunc("health", HealthCheck).Methods("GET")
+	router.HandleFunc("/alert", a.Alert).Methods("POST")	// Use per-Alert annotation, labels, images
+	router.HandleFunc("/notify", a.Notify).Methods("POST") // Use Notification Group Message. Only first Immage if there is any.
 
 	a.srv = &http.Server{
-		Handler:      a.router,
+		Handler:      router,
 		Addr:         ":" + addr,
 		WriteTimeout: 8 * time.Second,
 		ReadTimeout:  8 * time.Second,
 	}
 
 	a.myMinio = myMinio
+	a.atClient = atClient
 
 	return nil
 }
@@ -141,10 +144,8 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Alert-Webhook", "Top_level_Body_Common_Labels", *m)
 	slog.Debug("Alert-Webhook", "Alerts_Count", len(m.Alerts))
 
-	//fmt.Printf("Alerts array len = %d\n", len(m.Alerts))
-
-	var msg string
-	var stars string
+	var msg 	string
+	var stars 	string
 	var annotation bool
 	
 	const tLayout  = "02.01 15:04:05"
@@ -202,10 +203,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(msg)
 
 		var chatID int64
-		var tMethod string
-
 		chatID = -1
-		tMethod = "DIRECT"
 
 		chatID_s, exists := alert.Labels["chatID"]
 		if exists {
@@ -221,39 +219,26 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		if chatID == -1 {
 			slog.Warn("Alert-Webhook. Will not send to Telegram die to incorrect ChatID", "ChatID", strconv.FormatInt(chatID, 10))
 		} else {
-
-			tMethod, exists = alert.Labels["tMethod"]
-			if exists {
-				if (tMethod != "DIRECT") && (tMethod != "ATCLIENT") {
-					slog.Warn("Alert-Webhook. Incorrect \"tMethod\" Label set.")
-					tMethod = ""
-				}
-			} else {
-				tMethod = ""
-			}
-			if len(tMethod) == 0 {
-				tMethod = a.tMethod
-			}
-
-			slog.Info("Alert-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10), "TELEGRAM_METHOD", tMethod)
+			slog.Info("Alert-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10))
 
 			fileName, err := a.getImageFileMinio(alert)
-			if len(fileName) > 0 {
-				defer os.Remove(fileName)
-			}
 			if err != nil {
 				slog.Error("Alert-Webhook", "err", err)
+			} else if len(fileName) == 0 {
+				slog.Info("Alert-Webhook, getImage: no Image")
+			} else {
+				defer os.Remove(fileName)
 			}
 
-			if tMethod == "ATCLIENT" {
-
-			} else {		// DIRECT
+			if a.bot == nil {	// ATCLIENT
+				err = a.atClientTelegram(chatID, msg, fileName)
+			} else {			// DIRECT
 				err = a.directTelegram(chatID, msg, fileName)
-				if err != nil {
-					slog.Error("Alert-Webhook", "err", err)
-				} else {
-					slog.Info("Alert-Webhook, Telegram sent success")
-				}
+			}
+			if err != nil {
+				slog.Error("Alert-Webhook, Telegram send error", "err", err)
+			} else {
+				slog.Info("Alert-Webhook, Telegram sent success")
 			}
 		}
 	}	// for i, alert := range m.Alerts
@@ -262,8 +247,10 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 
-	slog.Info("New Alert - Notify request", "from", r.RemoteAddr, "Length", strconv.FormatInt(r.ContentLength, 10))
+	slog.Info("New Alert-Notify request", "from", r.RemoteAddr, "Length", strconv.FormatInt(r.ContentLength, 10))
+
 	m := &Body{}
+
 	err := json.NewDecoder(r.Body).Decode(m)
 	if err != nil {
 		slog.Error("Notify-Webhook", "err", err)
@@ -277,18 +264,15 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 	var msg string
 	var alertWithImage *AlertBody
 	var chatID int64
-	var tMethod string
 
 	//var chatID_s string
 	//var exists   bool
 
 	chatID = -1
-	tMethod = ""
 	alertWithImage = nil
 	msg = m.Message
 
 	slog.Info("Notify-Webhook. Search Image URL")
-
 	for i, alert := range m.Alerts {
 		slog.Info("Notify-Webhook", "Alert_Num", i+1, "json", *alert)
 
@@ -302,17 +286,8 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 					slog.Error("Notify-Webhook. Grafana ChatID Label is incorrect.", "err=", err)
 					chatID = -1
 				}
-			} else {
-				chatID = -1
-			}
-			tMethod, exists := alert.Labels["tMethod"]
-			if exists {
-				if (tMethod != "DIRECT") && (tMethod != "ATCLIENT") {
-					slog.Warn("Notofy-Webhook. Incorrect \"tMethod\" Label set. will use DIRECT as default")
-					tMethod = "DIRECT"
-				}
-			} else {
-				tMethod = ""
+			//} else {
+			//	chatID = -1
 			}
 			break
 		}
@@ -326,23 +301,9 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 				}
 			}	
 		}
-		if len(tMethod) == 0 {
-			tMethod, exists := alert.Labels["tMethod"]
-			if exists {
-				if (tMethod != "DIRECT") && (tMethod != "ATCLIENT") {
-					slog.Warn("Notofy-Webhook. Incorrect \"tMethod\" Label set. will use DIRECT as default")
-					tMethod = "DIRECT"
-				}
-			} else {
-				tMethod = ""
-			}
-		}
 	}
 	if chatID == -1 {
 		chatID = a.chatID
-	}
-	if len(tMethod) == 0 {
-		tMethod = a.tMethod
 	}
 
 	fmt.Println(msg)
@@ -352,28 +313,30 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 			respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message":"Incorrect Telegram chatID"})
 			return
 	} 
-	slog.Info("Notify-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10), "TELEGRAM_METHOD", tMethod)
+	slog.Info("Notify-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10))
 
 	fileName, err := a.getImageFileMinio(alertWithImage)
-	if len(fileName) > 0 {
-		defer os.Remove(fileName)
-	}
 	if err != nil {
 		slog.Error("Notify-Webhook", "err", err)
+	} else if len(fileName) == 0 {
+		slog.Info("Notify-Webhook, getImage: no Image")
+	} else {
+		defer os.Remove(fileName)
 	}
-	if tMethod == "ATCLIENT" {
 
-	} else {		// DIRECT
-
+	if a.bot == nil {	// ATCLIENT
+		err = a.atClientTelegram(chatID, msg, fileName)
+	} else {			// DIRECT
 		err = a.directTelegram(chatID, msg, fileName)
-		if err != nil {
-			slog.Error("Notify-Webhook, Telegram send error", "err", err)
-			respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message":"Telegram send error"})
-		} else {
-			slog.Info("Notify-Webhook, Telegram sent success")
-			respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
-		}
 	}
+	if err != nil {
+		slog.Error("Notify-Webhook, Telegram send error", "err", err)
+		respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message":"Telegram send error"})
+	} else {
+		slog.Info("Notify-Webhook, Telegram sent success")
+		respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
+	}
+			
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
@@ -390,13 +353,13 @@ func (a *App) getImageFileMinio (alert *AlertBody) (string, error) {
 	// error - in case of error downloading image (except no-Image case, when err = nil)
 
 	if alert == nil {
-		slog.Info("getImage: no Image")
+		//slog.Info("getImage: no Image")
 		//return nil, fmt.Errorf("getImage, warning: no Image")
 		return "", nil
 	}
 	imageURL := alert.ImageURL
 	if len(imageURL) == 0 {
-		slog.Info("getImage: no Image")
+		//slog.Info("getImage: no Image")
 		//return nil, fmt.Errorf("getImage, warning: no Image")
 		return "", nil
 	}
