@@ -44,7 +44,7 @@ func (a *App) NewJavaProcess(args []string) (*JavaProcess, error) {
 	} else {
 		javaArgs = append(javaArgs, "-cp", atClient.jarPath, className)
 	}
-	javaSrgs = append(javaArgs, "\"" + atClient.botServer + "\"", "\"" + atClient.port + "\"")
+	javaArgs = append(javaArgs, "\"" + atClient.botServer + "\"", "\"" + atClient.port + "\"")
 	javaArgs = append(javaArgs, args...)
 
 	// Create the command
@@ -180,9 +180,9 @@ func (a *App) atClientTelegram(chatID int64, msg string, fileName string) (error
 	//	<ChatID>  [<MessageId: <MID>>] [<ParseMode: <PM>>] <Body> [<FIle>]
 
 	javaArgs := []string { "\"" + strconv.FormatInt(chatID, 10) + "\"", "\"" + msg + "\"" }
-	if len(filename) > 0
-	javaArgs = append(javaArgs, "\"" + filename + "\"")
-
+	if len(filename) > 0 {
+		javaArgs = append(javaArgs, "\"" + filename + "\"")
+	}
 	javaProcess, err := a.NewJavaProcess(javaArgs)
 	if err != nil {
 		fmt.Printf("Failed to start Java process: %v\n", err)
