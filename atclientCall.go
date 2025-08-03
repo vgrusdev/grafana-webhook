@@ -10,7 +10,7 @@ import (
 	"os/exec"
 	"strings"
 	"time"
-	"slog"
+	"log/slog"
 	"strconv"
 )
 
