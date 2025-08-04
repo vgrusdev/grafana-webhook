@@ -17,9 +17,9 @@ import (
 type atClient_t struct {
 	javaPath string
 	javaParam []string
-	jarPath string
-	botServer string
-	port string
+	//jarPath string
+	//botServer string
+	//port string
 	timeout time.Duration
 }
 // JavaProcess represents a running Java process
@@ -35,20 +35,9 @@ type JavaProcess struct {
 func (a *App) NewJavaProcess(args []string) (*JavaProcess, error) {
 
 	atClient := a.atClient
-	className := ""				// Depriciated parameter of the function, restore it if needed in the future.
-
-	// Prepare Java command arguments
-	javaAgrs := atClient.javaParam
-	if className == "" {
-		javaArgs = append(javaArgs, "-jar", atClient.jarPath)
-	} else {
-		javaArgs = append(javaArgs, "-cp", atClient.jarPath, className)
-	}
-	javaArgs = append(javaArgs, "\"" + atClient.botServer + "\"", "\"" + atClient.port + "\"")
-	javaArgs = append(javaArgs, args...)
 
 	// Create the command
-	cmd := exec.Command(atClient.javaPath, javaArgs...)
+	cmd := exec.Command(atClient.javaPath, atClient.javaParam...)
 
 	// Set up pipes
 	stdin, err := cmd.StdinPipe()

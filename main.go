@@ -64,34 +64,58 @@ func main() {
 	if botToken == "ATCLIENT" {
 		atClient = &atClient_t {
 			javaPath: "java",
-			javaParam: []string{"-Xmx2048m", "-Dfile.encoding=UTF-8"},
-			jarPath: "atclient.jar",
-			botServer: "botserver",
-			port: "8888",
+			//javaParam: []string{},
+			//jarPath: "atclient.jar",
+			//botServer: "botserver",
+			//port: "8888",
 			timeout: 1*time.Second,
 		}
+		
 		env := os.Getenv("ATCLIENT_JAVAPATH")
 		if len(env) > 0 {
 			atClient.javaPath = env
 		}
+
+		javaArgs 	:= []string{}
+
+		// atClient default values
+		javaParam 	:= []string{"-Xmx2048m", "-Dfile.encoding=UTF-8"}
+		jarPath 	:= "atclient.jar"
+		className 	:= ""
+		botServer 	:= "botserver"
+		port 		:= "8888"
+
+		//-------
 		env = os.Getenv("ATCLIENT_PARAM")
 		if len(env) > 0 {
-			atClient.javaParam = strings.FieldsFunc(env, func(c rune) bool {
+			javaParam = strings.FieldsFunc(env, func(c rune) bool {
 														return c == ' ' || c == ',' || c == ';'
 														})
+			javaArgs = append(javaArgs, javaParam...)
 		}
+
+		//--------
 		env = os.Getenv("ATCLIENT_JARPATH")
 		if len(env) > 0 {
-			atClient.jarPath = env
+			jarPath = env
 		}
+		if className == "" {
+			javaArgs = append(javaArgs, "-jar", jarPath)
+		} else {
+			javaArgs = append(javaArgs, "-cp", jarPath, className)
+		}
+
+		//--------
 		env = os.Getenv("ATCLIENT_BOTSERVER")
 		if len(env) > 0 {
-			atClient.botServer = env
+			botServer = env
 		}
 		env = os.Getenv("ATCLIENT_PORT")
 		if len(env) > 0 {
-			atClient.port = env
+			port = env
 		}
+		atClient.javaParam = append(javaArgs, "\"" + botServer + "\"", "\"" + port + "\"")
+
 		env = os.Getenv("ATCLIENT_TIMEOUT")
 		if len(env) > 0 {
 			t, err := time.ParseDuration(env)
@@ -101,6 +125,23 @@ func main() {
 				atClient.timeout = t
 			}
 		}
+
+		className := ""				// Depriciated parameter of the function, restore it if needed in the future.
+
+	var javaArgs []string
+
+	// Prepare Java command arguments
+	//javaAgrs = atClient.javaParam
+	if className == "" {
+		atClient.javaParam = append(atClient.javaParam, "-jar", atClient.jarPath)
+	} else {
+		atClient.javaParam = append(atClient.javaParam, "-cp", atClient.jarPath, className)
+	}
+	atClient.javaParam = append(atClient.javaParam, "\"" + atClient.botServer + "\"", "\"" + atClient.port + "\"")
+
+
+
+
 	} else {
 		atClient = nil
 	}

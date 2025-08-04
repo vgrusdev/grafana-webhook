@@ -78,10 +78,11 @@ func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, add
 	if botToken == "ATCLIENT" {
 		a.bot = nil
 	} else {
-		a.bot, err := bot.New(botToken)
+		bot, err := bot.New(botToken)
     	if err != nil {
 			return err
     	}
+		a.bot = bot
 	}
 	a.chatID = chatID
 	a.ctx = ctx
