@@ -37,7 +37,9 @@ func (a *App) NewJavaProcess(args []string) (*JavaProcess, error) {
 	atClient := a.atClient
 
 	// Create the command
-	cmd := exec.Command(atClient.javaPath, atClient.javaParam..., args...)
+
+	javaArgs := append(atClient.javaPsram, args...)
+	cmd := exec.Command(atClient.javaPath, javaArgs...)
 
 	// Set up pipes
 	stdin, err := cmd.StdinPipe()
