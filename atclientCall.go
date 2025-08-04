@@ -37,7 +37,7 @@ func (a *App) NewJavaProcess(args []string) (*JavaProcess, error) {
 	atClient := a.atClient
 
 	// Create the command
-	cmd := exec.Command(atClient.javaPath, atClient.javaParam...)
+	cmd := exec.Command(atClient.javaPath, atClient.javaParam..., args...)
 
 	// Set up pipes
 	stdin, err := cmd.StdinPipe()
@@ -170,7 +170,7 @@ func (a *App) atClientTelegram(chatID int64, msg string, fileName string) (error
 
 	javaArgs := []string { "\"" + strconv.FormatInt(chatID, 10) + "\"", "\"" + msg + "\"" }
 	if len(filename) > 0 {
-		javaArgs = append(javaArgs, "\"" + filename + "\"")
+		javaArgs = append(javaArgs, "\"" + fileName + "\"")
 	}
 	javaProcess, err := a.NewJavaProcess(javaArgs)
 	if err != nil {
@@ -187,7 +187,7 @@ func (a *App) atClientTelegram(chatID int64, msg string, fileName string) (error
 	//	return
 	//}
 
-	slog.Info("Java output:\n%s\n", putput)
+	slog.Info("Java output:\n%s\n", output)
 
 	return err
 

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"context"
 	"time"
+	"strings"
 )
 
 func main() {
@@ -81,7 +82,7 @@ func main() {
 		// atClient default values
 		javaParam 	:= []string{"-Xmx2048m", "-Dfile.encoding=UTF-8"}
 		jarPath 	:= "atclient.jar"
-		className 	:= ""
+		className 	:= ""			// Depriciated parameter of the function, restore it if needed in the future.
 		botServer 	:= "botserver"
 		port 		:= "8888"
 
@@ -119,29 +120,12 @@ func main() {
 		env = os.Getenv("ATCLIENT_TIMEOUT")
 		if len(env) > 0 {
 			t, err := time.ParseDuration(env)
-			if err != nill {
+			if err != nil {
 				slog.Warn("ATCLIENT_TIMEOUT", "time.Duration format error", err)
 			} else {
 				atClient.timeout = t
 			}
 		}
-
-		className := ""				// Depriciated parameter of the function, restore it if needed in the future.
-
-	var javaArgs []string
-
-	// Prepare Java command arguments
-	//javaAgrs = atClient.javaParam
-	if className == "" {
-		atClient.javaParam = append(atClient.javaParam, "-jar", atClient.jarPath)
-	} else {
-		atClient.javaParam = append(atClient.javaParam, "-cp", atClient.jarPath, className)
-	}
-	atClient.javaParam = append(atClient.javaParam, "\"" + atClient.botServer + "\"", "\"" + atClient.port + "\"")
-
-
-
-
 	} else {
 		atClient = nil
 	}
