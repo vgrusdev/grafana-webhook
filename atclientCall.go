@@ -38,6 +38,10 @@ func (a *App) NewJavaProcess(args []string) (*JavaProcess, error) {
 	// Create the command
 
 	javaArgs := append(atClient.javaParam, args...)
+
+    fmt.Println("Java argiments:")
+	fmt.Println(atClient.javaPath, javaArgs...)
+
 	cmd := exec.Command(atClient.javaPath, javaArgs...)
 
 	// Set up pipes
@@ -58,6 +62,15 @@ func (a *App) NewJavaProcess(args []string) (*JavaProcess, error) {
 		stdout.Close()
 		return nil, fmt.Errorf("error creating stderr pipe: %w", err)
 	}
+
+	//VG *******************
+	stdin.Close()
+	stdout.Close()
+	stderr.Close()
+	return nil, fmt.Errorf("Debug starting Java process")
+	//VG *******************
+
+
 
 	// Start the process
 	if err := cmd.Start(); err != nil {
