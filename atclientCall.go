@@ -1,14 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os/exec"
-	"strings"
+	//"strings"
 	"time"
 	"log/slog"
 	"strconv"
@@ -38,7 +37,7 @@ func (a *App) NewJavaProcess(args []string) (*JavaProcess, error) {
 
 	// Create the command
 
-	javaArgs := append(atClient.javaPsram, args...)
+	javaArgs := append(atClient.javaParam, args...)
 	cmd := exec.Command(atClient.javaPath, javaArgs...)
 
 	// Set up pipes
@@ -171,13 +170,13 @@ func (a *App) atClientTelegram(chatID int64, msg string, fileName string) (error
 	//	<ChatID>  [<MessageId: <MID>>] [<ParseMode: <PM>>] <Body> [<FIle>]
 
 	javaArgs := []string { "\"" + strconv.FormatInt(chatID, 10) + "\"", "\"" + msg + "\"" }
-	if len(filename) > 0 {
+	if len(fileName) > 0 {
 		javaArgs = append(javaArgs, "\"" + fileName + "\"")
 	}
 	javaProcess, err := a.NewJavaProcess(javaArgs)
 	if err != nil {
-		fmt.Printf("Failed to start Java process: %v\n", err)
-		return
+		//fmt.Printf("Failed to start Java process: %v\n", err)
+		return err
 	}
 	defer javaProcess.Close()
 
