@@ -42,7 +42,7 @@ func (a *App) NewJavaProcess(args []string) (*JavaProcess, error) {
     //fmt.Println("Java argiments:")
 
 	str := fmt.Sprintf("%s, %v, %s\n", atClient.javaPath, javaArgs, atClient.timeout)
-	slog.Debug("NewJavaProcess.", "Java arguments:", str)
+	slog.Info("NewJavaProcess.", "Java arguments:", str)
 	//fmt.Printf("Java arguments: %s, %v, %s\n", atClient.javaPath, javaArgs, atClient.timeout)
 
 	cmd := exec.Command(atClient.javaPath, javaArgs...)
@@ -200,10 +200,10 @@ func (a *App) atClientTelegram(chatID int64, msg string, fileName string) (error
 	// Execute with input
 	output, err := javaProcess.Execute("")
 
-	if err != nil {
-		fmt.Printf("Error executing Java: %v\n", err)
-		return err
-	}
+	//if err != nil {
+	//	fmt.Printf("Error executing Java: %v\n", err)
+	//	return err
+	//}
 
 	slog.Info("atClientTelegram", "Java output:", output)
 
