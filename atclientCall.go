@@ -40,8 +40,7 @@ func (a *App) NewJavaProcess(args []string) (*JavaProcess, error) {
 	javaArgs := append(atClient.javaParam, args...)
 
     //fmt.Println("Java argiments:")
-	fmt.Printf("Java arguments: %s,", atClient.javaPath)
-	, javaArgs)
+	fmt.Printf("Java arguments: %s, %v, %s\n", atClient.javaPath, javaArgs, atClient.timeout)
 
 	cmd := exec.Command(atClient.javaPath, javaArgs...)
 
