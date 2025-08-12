@@ -40,7 +40,10 @@ func (a *App) NewJavaProcess(args []string) (*JavaProcess, error) {
 	javaArgs := append(atClient.javaParam, args...)
 
     //fmt.Println("Java argiments:")
-	fmt.Printf("Java arguments: %s, %v, %s\n", atClient.javaPath, javaArgs, atClient.timeout)
+
+	str := fmt.Sprintf("%s, %v, %s\n", atClient.javaPath, javaArgs, atClient.timeout)
+	slog.Debug("NewJavaProcess.", "Java arguments:", str)
+	//fmt.Printf("Java arguments: %s, %v, %s\n", atClient.javaPath, javaArgs, atClient.timeout)
 
 	cmd := exec.Command(atClient.javaPath, javaArgs...)
 
@@ -197,12 +200,12 @@ func (a *App) atClientTelegram(chatID int64, msg string, fileName string) (error
 	// Execute with input
 	output, err := javaProcess.Execute("")
 
-	//if err != nil {
-	//	fmt.Printf("Error executing Java: %v\n", err)
-	//	return
-	//}
+	if err != nil {
+		fmt.Printf("Error executing Java: %v\n", err)
+		return err
+	}
 
-	slog.Info("Java output:\n%s\n", output)
+	slog.Info("atClientTelegram", "Java output:", output)
 
 	return err
 
