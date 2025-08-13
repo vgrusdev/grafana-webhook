@@ -1,23 +1,22 @@
 package main
 
 import (
+	"context"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strconv"
-	"log/slog"
-	"context"
-	"time"
 	"strings"
+	"time"
 )
 
 func main() {
 
 	a := App{}
 
-	
 	var botToken string
-	var chatID   int64
-	var err		 error
+	var chatID int64
+	var err error
 
 	// Bot Token. Required parameter. Allowed options are:
 	// "ATCLIENT" - in the case external java scipt with embedded bot parameters is used to send Telegram messages,
@@ -51,11 +50,11 @@ func main() {
 
 	// Grafana needs to have options to save rendered images in teh S3 (MIMIO) storage.
 	// Setup MINIO server parameters to have images processed.
-	myMinio = &myMinio_t {
-		host:	os.Getenv("MINIO_HOST"),
-		port:	os.Getenv("MINIO_PORT"),
-		key:	os.Getenv("MINIO_KEY"),
-		secret:	os.Getenv("MINIO_SECRET"),
+	myMinio = &myMinio_t{
+		host:   os.Getenv("MINIO_HOST"),
+		port:   os.Getenv("MINIO_PORT"),
+		key:    os.Getenv("MINIO_KEY"),
+		secret: os.Getenv("MINIO_SECRET"),
 	}
 
 	// Initialise atClient
@@ -63,35 +62,35 @@ func main() {
 	var atClient *atClient_t
 
 	if botToken == "ATCLIENT" {
-		atClient = &atClient_t {
+		atClient = &atClient_t{
 			javaPath: "java",
 			//javaParam: []string{},
 			//jarPath: "atclient.jar",
 			//botServer: "botserver",
 			//port: "8888",
-			timeout: 1*time.Second,
+			timeout: 1 * time.Second,
 		}
-		
+
 		env := os.Getenv("ATCLIENT_JAVAPATH")
 		if len(env) > 0 {
 			atClient.javaPath = env
 		}
 
-		javaArgs 	:= []string{}
+		javaArgs := []string{}
 
 		// atClient default values
-		javaParam 	:= []string{"-Xmx2048m", "-Dfile.encoding=UTF-8"}
-		jarPath 	:= "atclient.jar"
-		className 	:= ""			// Depriciated parameter of the function, restore it if needed in the future.
-		botServer 	:= "botserver"
-		port 		:= "8888"
+		javaParam := []string{"-Xmx2048m", "-Dfile.encoding=UTF-8"}
+		jarPath := "atclient.jar"
+		className := "" // Depriciated parameter of the function, restore it if needed in the future.
+		botServer := "botserver"
+		port := "8888"
 
 		//-------
 		env = os.Getenv("ATCLIENT_PARAM")
 		if len(env) > 0 {
 			javaParam = strings.FieldsFunc(env, func(c rune) bool {
-														return c == ' ' || c == ',' || c == ';'
-														})
+				return c == ' ' || c == ',' || c == ';'
+			})
 			javaArgs = append(javaArgs, javaParam...)
 		}
 
@@ -115,7 +114,8 @@ func main() {
 		if len(env) > 0 {
 			port = env
 		}
-		atClient.javaParam = append(javaArgs, "\"" + botServer + "\"", "\"" + port + "\"")
+		//atClient.javaParam = append(javaArgs, "\"" + botServer + "\"", "\"" + port + "\"")
+		atClient.javaParam = append(javaArgs, botServer, port)
 
 		env = os.Getenv("ATCLIENT_TIMEOUT")
 		if len(env) > 0 {
@@ -130,10 +130,9 @@ func main() {
 		atClient = nil
 	}
 
-
 	// bot context with cancel func
 	ctxBot, cancelBot := context.WithCancel(context.Background())
-    defer cancelBot()
+	defer cancelBot()
 
 	err = a.Initialize(ctxBot, botToken, chatID, whPort, myMinio, atClient)
 	if err != nil {
@@ -152,11 +151,11 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 
 	// Block until we receive our signal.
-	select {	// which channel will be unblocked first ?
-	case <-c:	// os.Interrupt
+	select { // which channel will be unblocked first ?
+	case <-c: // os.Interrupt
 
 		// Create a deadline to wait for.
-		ctxSrv, cancelSrv := context.WithTimeout(context.Background(), 8 * time.Second)
+		ctxSrv, cancelSrv := context.WithTimeout(context.Background(), 8*time.Second)
 		defer cancelSrv()
 
 		// Doesn't block if no connections, but will otherwise wait
@@ -172,7 +171,7 @@ func main() {
 			slog.Info(s)
 		}
 
-	case s := <-chSrv:	// srv.ListenAndServe ended itself, probably due to error.
+	case s := <-chSrv: // srv.ListenAndServe ended itself, probably due to error.
 		slog.Error(s)
 	}
 

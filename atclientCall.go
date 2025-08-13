@@ -7,20 +7,22 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+
 	//"strings"
-	"time"
 	"log/slog"
 	"strconv"
+	"time"
 )
 
 type atClient_t struct {
-	javaPath string
+	javaPath  string
 	javaParam []string
 	//jarPath string
 	//botServer string
 	//port string
 	timeout time.Duration
 }
+
 // JavaProcess represents a running Java process
 type JavaProcess struct {
 	cmd     *exec.Cmd
@@ -39,7 +41,7 @@ func (a *App) NewJavaProcess(args []string) (*JavaProcess, error) {
 
 	javaArgs := append(atClient.javaParam, args...)
 
-    //fmt.Println("Java argiments:")
+	//fmt.Println("Java argiments:")
 
 	str := fmt.Sprintf("%s, %v, %s\n", atClient.javaPath, javaArgs, atClient.timeout)
 	slog.Info("NewJavaProcess.", "Java arguments:", str)
@@ -74,7 +76,6 @@ func (a *App) NewJavaProcess(args []string) (*JavaProcess, error) {
 	return nil, fmt.Errorf("Debug starting Java process")
 	//VG *******************
 	*/
-
 
 	// Start the process
 	if err := cmd.Start(); err != nil {
@@ -178,17 +179,18 @@ func (jp *JavaProcess) terminate() {
 	jp.cmd.Process.Kill()
 }
 
-
-func (a *App) atClientTelegram(chatID int64, msg string, fileName string) (error) {
+func (a *App) atClientTelegram(chatID int64, msg string, fileName string) error {
 
 	var err error
 
 	// func (a *App) NewJavaProcess(args []string) (*JavaProcess, error), where args:
 	//	<ChatID>  [<MessageId: <MID>>] [<ParseMode: <PM>>] <Body> [<FIle>]
 
-	javaArgs := []string { "\"" + strconv.FormatInt(chatID, 10) + "\"", "\"" + msg + "\"" }
+	//javaArgs := []string { "\"" + strconv.FormatInt(chatID, 10) + "\"", "\"" + msg + "\"" }
+	javaArgs := []string{strconv.FormatInt(chatID, 10), msg}
 	if len(fileName) > 0 {
-		javaArgs = append(javaArgs, "\"" + fileName + "\"")
+		//javaArgs = append(javaArgs, "\"" + fileName + "\"")
+		javaArgs = append(javaArgs, fileName)
 	}
 	javaProcess, err := a.NewJavaProcess(javaArgs)
 	if err != nil {
