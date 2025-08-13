@@ -43,7 +43,7 @@ func (a *App) NewJavaProcess(args []string) (*JavaProcess, error) {
 
 	//fmt.Println("Java argiments:")
 
-	str := fmt.Sprintf("%s, %v, %s\n", atClient.javaPath, javaArgs, atClient.timeout)
+	str := fmt.Sprintf("%s, %v, %s", atClient.javaPath, javaArgs, atClient.timeout)
 	slog.Info("NewJavaProcess.", "Java arguments:", str)
 	//fmt.Printf("Java arguments: %s, %v, %s\n", atClient.javaPath, javaArgs, atClient.timeout)
 
