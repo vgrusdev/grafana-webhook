@@ -207,7 +207,9 @@ func (a *App) atClientTelegram(chatID int64, msg string, fileName string) error 
 	//	return err
 	//}
 
-	slog.Info("atClientTelegram", "Java output:", output)
+	//slog.Info("atClientTelegram", "Java output:", output)
+	fmt.Println("atClientTelegram. Java process output:")
+	fmt.Println(output)
 
 	return err
 
