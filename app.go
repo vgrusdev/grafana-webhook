@@ -176,6 +176,9 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		if alertName == "DatasourceNoData" {
 			msg = fmt.Sprintf("%sПропуск данных для правила \"%s\"\n", msg, ruleName)
 			annotation = false
+		} else if alertName == "DatasourceError" {
+			msg = fmt.Sprintf("%sОшибка связи с сервером \"%s\"\n", msg, ruleName)
+			annotation = false
 		} else {
 			msg = fmt.Sprintf("%s%s\n", msg, alertName)
 		}
