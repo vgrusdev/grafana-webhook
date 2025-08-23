@@ -9,6 +9,7 @@ import (
 	//"bytes"
 	"fmt"
 	"os"
+	"io"
 
 	"github.com/gorilla/mux"
 
@@ -127,7 +128,7 @@ func (a *App) Codepage(w http.ResponseWriter, r *http.Request) {
 	slog.Info("New Codepage request", "from", r.RemoteAddr, "Length", strconv.FormatInt(r.ContentLength, 10))
 
 	//defer r.Body.Close()
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		slog.Error("Codepage", "err", err)
 	}
