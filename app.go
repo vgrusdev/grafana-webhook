@@ -139,16 +139,18 @@ func (a *App) Codepage(w http.ResponseWriter, r *http.Request) {
 
 	msg := text + "message-сообщение"
 
+	var err error
+
 	if a.bot == nil {	// ATCLIENT
-		err = a.atClientTelegram(a.chatID, msg, fileName)
+		err = a.atClientTelegram(a.chatID, msg, "")
 	} else {			// DIRECT
-		err = a.directTelegram(a.chatID, msg, fileName)
+		err = a.directTelegram(a.chatID, msg, "")
 	}
 	if err != nil {
-		fmt.Fprintf(w, "Telegram send error")
+		fmt.Fprintln(w, "Telegram send error")
 		slog.Error("Codepage-Webhook, Telegram send error", "err", err)
 	} else {
-		fmt.Fprintf("Telegram sent success")
+		fmt.Fprintln("Telegram sent success")
 		slog.Info("Codepage-Webhook, Telegram sent success")
 	}
 	
