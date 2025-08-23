@@ -136,6 +136,17 @@ func (a *App) Codepage(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	text := query.Get("text")
 	fmt.Fprintf(w, "Text: %s\n", text)
+
+	msg := text + "сообщение"
+
+	err := a.directTelegram(a.chatID, msg, fileName)
+	if err != nil {
+		fmt.Fprintf(w, "Telegram send error")
+		slog.Error("Codepage-Webhook, Telegram send error", "err", err)
+	} else {
+		fmt.Fprintf("Telegram sent success")
+		slog.Info("Codepage-Webhook, Telegram sent success")
+	}
 	
 	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
 }
