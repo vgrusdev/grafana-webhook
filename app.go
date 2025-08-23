@@ -91,6 +91,7 @@ func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, add
 	// router.HandleFunc("health", HealthCheck).Methods("GET")
 	router.HandleFunc("/alert", a.Alert).Methods("POST")	// Use per-Alert annotation, labels, images
 	router.HandleFunc("/notify", a.Notify).Methods("POST") // Use Notification Group Message. Only first Immage if there is any.
+	router.HandleFunc("/codepage", a.Codepage).Methods("Get") //
 
 	a.srv = &http.Server{
 		Handler:      router,
@@ -119,6 +120,21 @@ func (a *App) Run(c chan string) {
 func (a *App) Shutdown(ctx context.Context) {
 	slog.Info("Srv shutting down..")
 	a.srv.Shutdown(ctx)
+}
+
+func (a *App) Codepage(w http.ResponseWriter, r *http.Request) {
+
+	slog.Info("New Codepage request", "from", r.RemoteAddr, "Length", strconv.FormatInt(r.ContentLength, 10))
+
+	//defer r.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		slog.Error("Codepage", "err", err)
+	}
+
+	fmt.Printf("Body: %s\n", body)
+
+	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
 }
 
 func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
