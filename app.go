@@ -138,7 +138,7 @@ func (a *App) Codepage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Text: %s\n", text)
 
 	msg := text + "message-сообщение"
-
+	fmt.Fprintf(w, "Msg: %s\n", msg)
 	var err error
 
 	if a.bot == nil {	// ATCLIENT
