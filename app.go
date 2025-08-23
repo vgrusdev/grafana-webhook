@@ -9,7 +9,7 @@ import (
 	//"bytes"
 	"fmt"
 	"os"
-	"io"
+	//"io"
 
 	"github.com/gorilla/mux"
 
@@ -133,14 +133,10 @@ func (a *App) Codepage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Request URL: %s\n", r.URL)
 	fmt.Fprintf(w, "Request headers: %v\n", r.Header)
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		slog.Error("Codepage", "err", err)
-	}
-	fmt.Fprintf(w, "Body: %s\n", body)
-
-	fmt.Printf("Body: %s\n", body)
-
+	query := r.URL.Query()
+	text := query.Get("text")
+	fmt.Fprintf(w, "Text: %s\n", text)
+	
 	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
 }
 
