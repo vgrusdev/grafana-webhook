@@ -150,7 +150,7 @@ func (a *App) Codepage(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Telegram send error")
 		slog.Error("Codepage-Webhook, Telegram send error", "err", err)
 	} else {
-		fmt.Fprintln("Telegram sent success")
+		fmt.Fprintln(w, "Telegram sent success")
 		slog.Info("Codepage-Webhook, Telegram sent success")
 	}
 	
