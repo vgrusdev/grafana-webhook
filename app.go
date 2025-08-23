@@ -128,10 +128,16 @@ func (a *App) Codepage(w http.ResponseWriter, r *http.Request) {
 	slog.Info("New Codepage request", "from", r.RemoteAddr, "Length", strconv.FormatInt(r.ContentLength, 10))
 
 	//defer r.Body.Close()
+
+	fmt.Fprintf(w, "Request method: %s\n", r.Method)
+	fmt.Fprintf(w, "Request URL: %s\n", r.URL)
+	fmt.Fprintf(w, "Request headers: %v\n", r.Header)
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		slog.Error("Codepage", "err", err)
 	}
+	fmt.Fprintf(w, "Body: %s\n", body)
 
 	fmt.Printf("Body: %s\n", body)
 
