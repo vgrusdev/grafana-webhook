@@ -138,7 +138,7 @@ func (a *App) Codepage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Text: %s\n", text)
 	fmt.Fprintf(w, "Text+q: %+q\n", text)
 
-	msg := fmt.Sprintf("%s.%s", test, "message-сообщение")
+	msg := fmt.Sprintf("%s.%s", text, "message-сообщение")
 	fmt.Fprintf(w, "Msg: %s\n", msg)
 	fmt.Fprintf(w, "Msg+q: %+q\n", msg)
 	var err error
