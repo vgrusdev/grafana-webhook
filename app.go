@@ -136,11 +136,11 @@ func (a *App) Codepage(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	text := query.Get("text")
 	fmt.Fprintf(w, "Text: %s\n", text)
-	fmt.Fprintf(w, "Text+q: %+q\n", text)
+	fmt.Fprintf(w, "Text-q: %q\n", text)
 
 	msg := fmt.Sprintf("%s.%s", text, "message-сообщение")
 	fmt.Fprintf(w, "Msg: %s\n", msg)
-	fmt.Fprintf(w, "Msg+q: %+q\n", msg)
+	fmt.Fprintf(w, "Msg-q: %q\n", msg)
 	var err error
 
 	if a.bot == nil {	// ATCLIENT
