@@ -89,7 +89,7 @@ func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, add
 	a.ctx = ctx
 
 	router := mux.NewRouter()
-	// router.HandleFunc("health", HealthCheck).Methods("GET")
+	router.HandleFunc("/health", a.HealthCheck).Methods("GET")
 	router.HandleFunc("/alert", a.Alert).Methods("POST")	// Use per-Alert annotation, labels, images
 	router.HandleFunc("/notify", a.Notify).Methods("POST") // Use Notification Group Message. Only first Immage if there is any.
 	router.HandleFunc("/codepage", a.Codepage).Methods("Get") //
@@ -121,6 +121,10 @@ func (a *App) Run(c chan string) {
 func (a *App) Shutdown(ctx context.Context) {
 	slog.Info("Srv shutting down..")
 	a.srv.Shutdown(ctx)
+}
+
+func (a *App) HealthCheck(w http.ResponseWriter, r *http.Request) {
+	respondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
 }
 
 func (a *App) Codepage(w http.ResponseWriter, r *http.Request) {
@@ -156,7 +160,7 @@ func (a *App) Codepage(w http.ResponseWriter, r *http.Request) {
 		slog.Info("Codepage-Webhook, Telegram sent success")
 	}
 	
-	respondWithJSON(w, http.StatusCreated, map[string]string{"result": "success"})
+	respondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
 }
 
 func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
