@@ -193,7 +193,8 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 	var stars string
 	var annotation bool
 
-	const tLayout = "02.01 15:04:05 MST"
+	//const tLayout = "02.01 15:04:05 MST"
+	const tLayout = "02.01 15:04:05"
 	const tYear = "2006"
 	const stars_O = "**********************"
 	const stars_F = "****** FIRING ! ******"
