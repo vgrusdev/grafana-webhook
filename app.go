@@ -82,7 +82,15 @@ func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, add
 	if botToken == "ATCLIENT" {
 		a.bot = nil
 	} else {
-		bot, err := bot.New(botToken)
+
+		opts := []bot.Options{}
+
+		tgURL := os.Getenv("TELEGRAM_URL")
+		if len(tgURL) > 0 {
+			slog.Info("TELEGRAM_URL has been setup from environment TELEGRAM_URL", tgURL)
+			opts.append(bot.WithServerURL(tgURL))
+		}
+		bot, err := bot.New(botToken, opts...)
 		if err != nil {
 			return err
 		}
