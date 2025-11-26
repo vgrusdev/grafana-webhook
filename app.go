@@ -83,7 +83,7 @@ func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, add
 		a.bot = nil
 	} else {
 
-		opts := []bot.Options{}
+		opts := []bot.Option{}
 
 		tgURL := os.Getenv("TELEGRAM_URL")
 		if len(tgURL) > 0 {
