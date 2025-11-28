@@ -264,7 +264,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		if annotation && ok {
 			msg = fmt.Sprintf("%s%s\n%s", msg, stars_M, ann)
 		} else {
-			msg = fmt.Sprintf("%s%s", msg, stars)
+			msg = fmt.Sprintf("%s%s", msg, stars_O)
 		}
 		fmt.Println(msg)
 
