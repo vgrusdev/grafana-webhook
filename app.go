@@ -261,7 +261,11 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 			msg = fmt.Sprintf("%sValue : %8.2f\n", msg, value)
 		}
 		if annotation == true {
-			msg = fmt.Sprintf("%s%s\n%s", msg, stars_M, alert.Annotations["summary"])
+			ann, ok := alert.Annotations["summary"]
+			if !ok {
+				ann = ""
+			}
+			msg = fmt.Sprintf("%s%s\n%s", msg, stars_M, ann)
 		} else {
 			msg = fmt.Sprintf("%s%s", msg, stars)
 		}
