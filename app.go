@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -187,8 +188,24 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 
 	m := &Body{} // top-level body of alerts, containing common labels, links, etc
 
-	err := json.NewDecoder(r.Body).Decode(m)
-	if err != nil {
+	/*
+		err := json.NewDecoder(r.Body).Decode(m)
+		if err != nil {
+			slog.Error("Alert", "err", err)
+			respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message": "Invalid JSON Format"})
+			return
+		}
+	*/
+
+	// Read body if present
+	body, _ := io.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	slog.Debug("requesed body:", string(body))
+	decoder := json.NewDecoder(strings.NewReader(string(body)))
+	decoder.UseNumber() // This keeps numbers as json.Number
+
+	if err := decoder.Decode(m); err != nil {
 		slog.Error("Alert", "err", err)
 		respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message": "Invalid JSON Format"})
 		return
@@ -283,9 +300,11 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if chatID == -1 {
-			slog.Warn("Alert-Webhook. Will not send to Telegram die to incorrect ChatID", "ChatID", strconv.FormatInt(chatID, 10))
+			slog.Warn("Alert-Webhook. Will not send to Telegram due to incorrect ChatID", "ChatID", strconv.FormatInt(chatID, 10))
+			//respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message": "Incorrect ChatID"+strconv.FormatInt(chatID, 10)})
+			//return
 		} else {
-			slog.Info("Alert-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10))
+			slog.Info("Alert-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(chatID, 10))
 
 			fileName, err := a.getImageFileMinio(alert)
 			if err != nil {
@@ -379,7 +398,7 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 		respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message": "Incorrect Telegram chatID"})
 		return
 	}
-	slog.Info("Notify-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(a.chatID, 10))
+	slog.Info("Notify-Webhook. Sending to Telegram", "ChatID", strconv.FormatInt(chatID, 10))
 
 	fileName, err := a.getImageFileMinio(alertWithImage)
 	if err != nil {
