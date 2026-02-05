@@ -55,7 +55,7 @@ type Body struct {
 	GroupLabels       map[string]string `json:"groupLabels,omitempty"`       //Labels that are used for grouping, map of string keys to string values
 	CommonLabels      map[string]string `json:"commonLabels,omitempty"`      //Labels that all alarms have in common, map of string keys to string values
 	CommonAnnotations map[string]string `json:"commonAnnotations,omitempty"` //Annotations that all alarms have in common, map of string keys to string values
-	ExternalURL       string            `json:"commonLabels,omitempty"`      //External URL to the Grafana instance sending this webhook
+	ExternalURL       string            `json:"externalURL,omitempty"`       //External URL to the Grafana instance sending this webhook
 	Version           string            `json:"version,omitempty"`           // Version of the payload structure.
 	//GroupKey	string					`json:"groupKey,omitempty"`			//Key that is used for grouping
 	TruncatedAlerts int64  `json:"truncatedAlerts,omitempty"` //number	Number of alerts that were truncated.
@@ -283,7 +283,10 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		} else {
 			msg = fmt.Sprintf("%s%s", msg, stars_O)
 		}
-		fmt.Println(msg)
+		//fmt.Println(msg)
+		for _, str := range strings.Split(msg, "\n") {
+			slog.Info(str)
+		}
 
 		var chatID int64
 		chatID = -1
