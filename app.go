@@ -325,6 +325,9 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 			}
 			if err != nil {
 				slog.Error("Alert-Webhook, Telegram send error", "err", err)
+				ee := fmt.Sprintf("Telegram send error: %s\n", err)
+				respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message": ee})
+				return
 			} else {
 				slog.Info("Alert-Webhook, Telegram sent success")
 			}
