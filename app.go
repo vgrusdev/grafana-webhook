@@ -284,9 +284,11 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 			msg = fmt.Sprintf("%s%s", msg, stars_O)
 		}
 		//fmt.Println(msg)
+		slog.Info("   +-- Beginning of Msg --")
 		for _, str := range strings.Split(msg, "\n") {
-			slog.Info(" ", "=> ", str)
+			slog.Info("   |" + str)
 		}
+		slog.Info("   +--- End of Message ---")
 
 		var chatID int64
 		chatID = -1
@@ -398,9 +400,12 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//fmt.Println(msg)
+
+	slog.Info("   +-- Beginning of Msg --")
 	for _, str := range strings.Split(msg, "\n") {
-		slog.Info(" ", "=> ", str)
+		slog.Info("   |" + str)
 	}
+	slog.Info("   +--- End of Message ---")
 
 	if chatID == -1 {
 		slog.Warn("Notify-Webhook. Will not send to Telegram die to incorrect ChatID", "ChatID", strconv.FormatInt(chatID, 10))
