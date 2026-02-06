@@ -87,7 +87,7 @@ func (a *App) Initialize(ctx context.Context, botToken string, chatID int64, add
 		var mbot *bot.Bot
 		var err error
 		if len(tgURL) > 0 {
-			slog.Info("TELEGRAM_URL has been setup from environment TELEGRAM_URL", tgURL)
+			slog.Info("TELEGRAM_URL has been setup from environment", "TELEGRAM_URL", tgURL)
 			opts := []bot.Option{
 				bot.WithServerURL(tgURL),
 			}
@@ -201,7 +201,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 	body, _ := io.ReadAll(r.Body)
 	defer r.Body.Close()
 
-	slog.Debug("requesed body:", string(body))
+	slog.Debug("requested:", "body", string(body))
 	decoder := json.NewDecoder(strings.NewReader(string(body)))
 	decoder.UseNumber() // This keeps numbers as json.Number
 
@@ -297,7 +297,7 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 		if exists {
 			chatID, err = strconv.ParseInt(chatID_s, 10, 64)
 			if err != nil {
-				slog.Error("Alert-Webhook. Grafana \"chatID\" Label is incorrect.", "err=", err)
+				slog.Error("Alert-Webhook. Grafana \"chatID\" Label is incorrect.", "err", err)
 				chatID = -1
 			}
 		} else {
@@ -376,7 +376,7 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 			if exists {
 				chatID, err = strconv.ParseInt(chatID_s, 10, 64)
 				if err != nil {
-					slog.Error("Notify-Webhook. Grafana ChatID Label is incorrect.", "err=", err)
+					slog.Error("Notify-Webhook. Grafana ChatID Label is incorrect.", "err", err)
 					chatID = -1
 				}
 				//} else {
@@ -389,7 +389,7 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 			if exists {
 				chatID, err = strconv.ParseInt(chatID_s, 10, 64)
 				if err != nil {
-					slog.Warn("Notify-Webhook. Grafana ChatID Label is incorrect.", "err=", err)
+					slog.Warn("Notify-Webhook. Grafana ChatID Label is incorrect.", "err", err)
 					chatID = -1
 				}
 			}
