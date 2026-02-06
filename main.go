@@ -12,8 +12,23 @@ import (
 
 func main() {
 
+	logLevel := os.Getenv("WEBHOOK_LOGLEVEL")
+	level := slog.LevelInfo
+	switch logLevel {
+	case "debug":
+		level = slog.LevelDebug
+	case "info":
+		level = slog.LevelInfo
+	case "warn":
+		level = slog.LevelWarn
+	case "error":
+		level = slog.LevelError
+	default:
+		level = slog.LevelInfo
+	}
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
+		//	Level: slog.LevelDebug,
+		Level: level,
 	})))
 
 	a := App{}
