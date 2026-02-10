@@ -205,7 +205,8 @@ func (a *App) Alert(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(strings.NewReader(string(body)))
 	decoder.UseNumber() // This keeps numbers as json.Number
 
-	if err := decoder.Decode(m); err != nil {
+	err := decoder.Decode(m)
+	if err != nil {
 		slog.Error("Alert", "err", err)
 		respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message": "Invalid JSON Format"})
 		return
@@ -344,7 +345,16 @@ func (a *App) Notify(w http.ResponseWriter, r *http.Request) {
 
 	m := &Body{}
 
-	err := json.NewDecoder(r.Body).Decode(m)
+	// Read body if present
+	body, _ := io.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	slog.Debug("requested:", "body", string(body))
+	decoder := json.NewDecoder(strings.NewReader(string(body)))
+	decoder.UseNumber() // This keeps numbers as json.Number
+
+	err := decoder.Decode(m)
+
 	if err != nil {
 		slog.Error("Notify-Webhook", "err", err)
 		respondWithJSON(w, http.StatusBadRequest, map[string]string{"result": "error", "message": "Invalid JSON Format"})
